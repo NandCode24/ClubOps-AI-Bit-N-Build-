@@ -4,13 +4,14 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signInWithGoogle } from "../lib/auth";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
     return (
       <svg
-        width="24"
-        height="24"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -29,8 +30,8 @@ function EyeIcon({ open }: { open: boolean }) {
 
   return (
     <svg
-      width="24"
-      height="24"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -68,8 +69,8 @@ function EyeIcon({ open }: { open: boolean }) {
 function GoogleIcon() {
   return (
     <svg
-      width="24"
-      height="24"
+      width="22"
+      height="22"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -95,50 +96,26 @@ function GoogleIcon() {
 
 function Logo() {
   return (
-    <div className="flex items-center justify-center gap-2">
-      <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#0F172A]">
+    <Link href="/" className="flex items-center justify-center gap-2.5 group">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
         <svg
-          width="18"
-          height="18"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <rect
-            x="5"
-            y="3"
-            width="14"
-            height="18"
-            rx="3"
-            stroke="#2563EB"
-            strokeWidth="2"
-          />
           <path
-            d="M9 3.5V6"
-            stroke="#2563EB"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <path
-            d="M15 3.5V6"
-            stroke="#2563EB"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <path
-            d="M9 13L11 15L15.5 10.5"
-            stroke="#06B6D4"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+            fill="currentColor"
           />
         </svg>
       </div>
 
-      <span className="text-[20px] font-bold tracking-[-0.5px] text-[#0F172A]">
-        ClubOps<span className="text-[#2563EB]">.AI</span>
+      <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+        ClubOps<span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">.AI</span>
       </span>
-    </div>
+    </Link>
   );
 }
 
@@ -149,26 +126,18 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
     setError("");
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
       return;
     }
 
@@ -190,13 +159,13 @@ export default function SignUpPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Unable to create your account.");
+        throw new Error(data.message || "Unable to create account.");
       }
 
       router.push("/dashboard");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Unable to create your account.",
+        err instanceof Error ? err.message : "Unable to create account."
       );
     } finally {
       setLoading(false);
@@ -233,26 +202,37 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mx-auto w-full max-w-[650px] rounded-[28px] border border-[#E2E8F0] bg-white px-6 py-10 shadow-[0_8px_30px_rgba(15,23,42,0.04)] sm:px-12 sm:py-14 md:px-12">
+    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-colors duration-200">
+      {/* Top Floating Controls */}
+      <div className="mx-auto flex max-w-[620px] items-center justify-between mb-4">
+        <Link
+          href="/"
+          className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition"
+        >
+          ← Back to Home
+        </Link>
+        <ThemeToggle />
+      </div>
+
+      <div className="mx-auto w-full max-w-[620px] rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 px-6 py-8 sm:px-12 sm:py-12 shadow-xl shadow-slate-200/40 dark:shadow-none backdrop-blur-md transition-colors duration-200">
         <div className="flex flex-col items-center">
           <Logo />
 
-          <div className="mt-12 text-center">
-            <h1 className="text-[38px] font-bold leading-[1.15] tracking-[-1.5px] text-[#0F172A] sm:text-[44px]">
+          <div className="mt-8 sm:mt-10 text-center">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Create your account
             </h1>
 
-            <p className="mt-4 text-[18px] leading-7 text-[#64748B] sm:text-[21px]">
-              Start managing your events with ClubOps AI.
+            <p className="mt-2 text-sm sm:text-base text-slate-500 dark:text-slate-400">
+              Start managing your events and teams with ClubOps AI.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-10 w-full space-y-6">
+          <form onSubmit={handleSubmit} className="mt-8 sm:mt-10 w-full space-y-4 sm:space-y-5">
             <div>
               <label
                 htmlFor="fullName"
-                className="mb-2.5 block text-[17px] font-semibold text-[#0F172A]"
+                className="mb-1.5 block text-sm font-semibold text-slate-800 dark:text-slate-200"
               >
                 Full Name
               </label>
@@ -265,16 +245,16 @@ export default function SignUpPage() {
                 placeholder="Alex Chen"
                 autoComplete="name"
                 required
-                className="h-[70px] w-full rounded-[15px] border border-[#D9E1EC] bg-white px-6 text-[20px] text-[#0F172A] outline-none transition placeholder:text-[#64748B] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
+                className="h-13 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/80 px-4 text-base text-slate-900 dark:text-white outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-600 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-800"
               />
             </div>
 
             <div>
               <label
                 htmlFor="email"
-                className="mb-2.5 block text-[17px] font-semibold text-[#0F172A]"
+                className="mb-1.5 block text-sm font-semibold text-slate-800 dark:text-slate-200"
               >
-                Email
+                Email Address
               </label>
 
               <input
@@ -285,14 +265,14 @@ export default function SignUpPage() {
                 placeholder="name@campus.edu"
                 autoComplete="email"
                 required
-                className="h-[70px] w-full rounded-[15px] border border-[#D9E1EC] bg-white px-6 text-[20px] text-[#0F172A] outline-none transition placeholder:text-[#64748B] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
+                className="h-13 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/80 px-4 text-base text-slate-900 dark:text-white outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-600 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-800"
               />
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="mb-2.5 block text-[17px] font-semibold text-[#0F172A]"
+                className="mb-1.5 block text-sm font-semibold text-slate-800 dark:text-slate-200"
               >
                 Password
               </label>
@@ -306,14 +286,14 @@ export default function SignUpPage() {
                   placeholder="••••••••"
                   autoComplete="new-password"
                   required
-                  className="h-[70px] w-full rounded-[15px] border border-[#D9E1EC] bg-white px-6 pr-16 text-[20px] text-[#0F172A] outline-none transition placeholder:text-[#64748B] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
+                  className="h-13 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/80 px-4 pr-12 text-base text-slate-900 dark:text-white outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-600 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-800"
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword((value) => !value)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#94A3B8] transition hover:text-[#64748B]"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-300"
                 >
                   <EyeIcon open={showPassword} />
                 </button>
@@ -323,7 +303,7 @@ export default function SignUpPage() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="mb-2.5 block text-[17px] font-semibold text-[#0F172A]"
+                className="mb-1.5 block text-sm font-semibold text-slate-800 dark:text-slate-200"
               >
                 Confirm Password
               </label>
@@ -337,7 +317,7 @@ export default function SignUpPage() {
                   placeholder="••••••••"
                   autoComplete="new-password"
                   required
-                  className="h-[70px] w-full rounded-[15px] border border-[#D9E1EC] bg-white px-6 pr-16 text-[20px] text-[#0F172A] outline-none transition placeholder:text-[#64748B] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
+                  className="h-13 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/80 px-4 pr-12 text-base text-slate-900 dark:text-white outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-600 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-800"
                 />
 
                 <button
@@ -346,7 +326,7 @@ export default function SignUpPage() {
                   aria-label={
                     showConfirmPassword ? "Hide password" : "Show password"
                   }
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#94A3B8] transition hover:text-[#64748B]"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-300"
                 >
                   <EyeIcon open={showConfirmPassword} />
                 </button>
@@ -354,7 +334,7 @@ export default function SignUpPage() {
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-xs sm:text-sm font-medium text-red-600 dark:text-red-400">
                 {error}
               </div>
             )}
@@ -362,33 +342,33 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="h-[64px] w-full rounded-[14px] bg-[#2563EB] text-[20px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-13 w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-base font-bold text-white shadow-md shadow-indigo-500/25 transition hover:opacity-95 active:scale-98 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Creating account..." : "Create Account"}
             </button>
           </form>
 
-          <div className="my-8 flex w-full items-center gap-5">
-            <div className="h-px flex-1 bg-[#D9E1EC]" />
-            <span className="text-[18px] font-medium text-[#64748B]">OR</span>
-            <div className="h-px flex-1 bg-[#D9E1EC]" />
+          <div className="my-6 sm:my-8 flex w-full items-center gap-4">
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">OR</span>
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
           </div>
 
           <button
             type="button"
             onClick={handleGoogleSignUp}
             disabled={loading || googleLoading}
-            className="flex h-[64px] w-full items-center justify-center gap-4 rounded-[14px] border border-[#D9E1EC] bg-white text-[19px] font-medium text-[#0F172A] shadow-[0_2px_5px_rgba(15,23,42,0.04)] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-13 w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 shadow-2xs transition hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-98 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <GoogleIcon />
             {googleLoading ? "Connecting..." : "Continue with Google"}
           </button>
 
-          <p className="mt-9 text-center text-[18px] text-[#64748B]">
+          <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
             Already have an account?{" "}
             <Link
               href="/signin"
-              className="font-medium text-[#2563EB] hover:underline"
+              className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
             >
               Sign in
             </Link>
@@ -396,18 +376,18 @@ export default function SignUpPage() {
         </div>
       </div>
 
-      <p className="mx-auto mt-7 max-w-[650px] px-4 text-center text-[16px] leading-6 text-[#94A3B8]">
+      <p className="mx-auto mt-6 max-w-[620px] px-4 text-center text-xs text-slate-400 dark:text-slate-500">
         By continuing, you agree to our{" "}
         <Link
           href="/terms"
-          className="underline underline-offset-2 hover:text-[#64748B]"
+          className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-400"
         >
           Terms of Service
         </Link>{" "}
         and{" "}
         <Link
           href="/privacy"
-          className="underline underline-offset-2 hover:text-[#64748B]"
+          className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-400"
         >
           Privacy Policy
         </Link>

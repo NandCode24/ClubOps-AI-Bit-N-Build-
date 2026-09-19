@@ -27,15 +27,27 @@ export async function GET(
     }
 
     const club = clubRows[0];
-    if (club.leader_id !== user.id) {
+    const isLeader = club.leader_id === user.id;
+
+    let isMember = isLeader;
+    if (!isLeader) {
+      const memberRows = await sql`
+        SELECT id FROM club_members WHERE club_id = ${clubId} AND user_id = ${user.id} LIMIT 1
+      `;
+      isMember = memberRows.length > 0;
+    }
+
+    if (!isMember) {
       return NextResponse.json(
-        { success: false, message: "Only the club leader can stream club real-time events." },
+        { success: false, message: "Access denied. Only club members or leaders can connect to real-time events." },
         { status: 403 }
       );
     }
 
     const encoder = new TextEncoder();
-    const eventChannel = `club:${clubId}:request`;
+    const requestChannel = `club:${clubId}:request`;
+    const taskChannel = `club:${clubId}:tasks`;
+    const eventChannel = `club:${clubId}:events`;
 
     let cleanup: (() => void) | null = null;
 
@@ -43,21 +55,48 @@ export async function GET(
       start(controller) {
         // Send initial connected confirmation event
         controller.enqueue(
-          encoder.encode(`event: connected\ndata: ${JSON.stringify({ clubId, status: "live" })}\n\n`)
+          encoder.encode(`event: connected\ndata: ${JSON.stringify({ clubId, isLeader, status: "live" })}\n\n`)
         );
 
-        // Real-time join request handler
+        // Real-time join request handler (leaders only)
         const onRequest = (payload: RealtimeJoinRequestEvent) => {
+          if (!isLeader) return;
           try {
             controller.enqueue(
               encoder.encode(`event: new_join_request\ndata: ${JSON.stringify(payload)}\n\n`)
             );
           } catch (err) {
-            console.error("Error streaming SSE event:", err);
+            console.error("Error streaming SSE join request:", err);
           }
         };
 
-        clubEvents.on(eventChannel, onRequest);
+        // Real-time task handler
+        const onTask = (payload: any) => {
+          try {
+            controller.enqueue(
+              encoder.encode(`event: task_updated\ndata: ${JSON.stringify(payload)}\n\n`)
+            );
+          } catch (err) {
+            console.error("Error streaming SSE task:", err);
+          }
+        };
+
+        // Real-time event announcement handler
+        const onEventUpdate = (payload: any) => {
+          try {
+            controller.enqueue(
+              encoder.encode(`event: club_event_updated\ndata: ${JSON.stringify(payload)}\n\n`)
+            );
+          } catch (err) {
+            console.error("Error streaming SSE event update:", err);
+          }
+        };
+
+        if (isLeader) {
+          clubEvents.on(requestChannel, onRequest);
+        }
+        clubEvents.on(taskChannel, onTask);
+        clubEvents.on(eventChannel, onEventUpdate);
 
         // Keep-alive heartbeat every 15 seconds
         const heartbeat = setInterval(() => {
@@ -69,7 +108,11 @@ export async function GET(
         }, 15000);
 
         cleanup = () => {
-          clubEvents.off(eventChannel, onRequest);
+          if (isLeader) {
+            clubEvents.off(requestChannel, onRequest);
+          }
+          clubEvents.off(taskChannel, onTask);
+          clubEvents.off(eventChannel, onEventUpdate);
           clearInterval(heartbeat);
         };
       },

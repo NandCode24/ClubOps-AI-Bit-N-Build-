@@ -25,10 +25,16 @@ async function runMigration() {
         college_name VARCHAR(255),
         skills TEXT[] DEFAULT '{}',
         photo_url TEXT,
+        is_available BOOLEAN DEFAULT true,
+        unavailable_until TIMESTAMPTZ,
+        unavailable_reason VARCHAR(255),
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_available BOOLEAN DEFAULT true;`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS unavailable_until TIMESTAMPTZ;`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS unavailable_reason VARCHAR(255);`;
     console.log("✓ Created/verified users table");
 
     // 2. Clubs Table
@@ -101,11 +107,32 @@ async function runMigration() {
         mode VARCHAR(50) DEFAULT 'offline',
         start_time TIMESTAMPTZ,
         end_time TIMESTAMPTZ,
+        meeting_link TEXT,
+        meeting_code TEXT,
+        meeting_time TIMESTAMPTZ,
         created_by TEXT REFERENCES users(id),
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `;
+    // Add columns if table already existed
+    await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS meeting_link TEXT;`;
+    await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS meeting_code TEXT;`;
+    await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS meeting_time TIMESTAMPTZ;`;
     console.log("✓ Created/verified events table");
+
+    // 6.1 Event Participants Table
+    await sql`
+      CREATE TABLE IF NOT EXISTS event_participants (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        club_id UUID NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        assigned_role VARCHAR(100),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT unique_event_participant UNIQUE (event_id, user_id)
+      );
+    `;
+    console.log("✓ Created/verified event_participants table");
 
     // 7. Tasks Table (with AI risk constraint: 1 active task per volunteer)
     await sql`
@@ -118,9 +145,11 @@ async function runMigration() {
         assigned_to TEXT REFERENCES users(id) ON DELETE SET NULL,
         deadline TIMESTAMPTZ,
         status VARCHAR(50) DEFAULT 'pending',
+        completed_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;`;
     console.log("✓ Created/verified tasks table");
 
     // 8. Announcements & Meeting Summaries
@@ -144,6 +173,12 @@ async function runMigration() {
     await sql`CREATE INDEX IF NOT EXISTS idx_club_members_club ON club_members(club_id);`;
     await sql`CREATE INDEX IF NOT EXISTS idx_join_requests_club_status ON join_requests(club_id, status);`;
     await sql`CREATE INDEX IF NOT EXISTS idx_join_requests_user ON join_requests(user_id);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_events_club ON events(club_id);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_event_participants_event ON event_participants(event_id);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_event_participants_user ON event_participants(user_id);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tasks_event ON tasks(event_id);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_users_availability ON users(is_available, unavailable_until);`;
 
     console.log("✓ Created/verified indexes");
     console.log("Migration finished successfully!");

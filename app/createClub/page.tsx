@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 const PRESET_ROLES = [
   "Technical Lead",
@@ -19,11 +20,11 @@ const PRESET_AVATARS = [
 
 function Logo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-3">
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20">
+    <Link href="/dashboard" className="flex items-center gap-2.5 sm:gap-3 group">
+      <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
         <svg
-          width="22"
-          height="22"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -35,10 +36,10 @@ function Logo() {
         </svg>
       </div>
       <div>
-        <span className="text-[20px] font-bold tracking-tight text-slate-900">
-          ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">AI</span>
+        <span className="text-[18px] sm:text-[20px] font-bold tracking-tight text-slate-900 dark:text-white">
+          ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
         </span>
-        <span className="block text-[11px] font-medium uppercase tracking-wider text-slate-400">
+        <span className="block text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
           Event Operations
         </span>
       </div>
@@ -162,71 +163,62 @@ export default function CreateClubPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 px-4 py-8 sm:px-6 sm:py-12">
+    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-colors duration-200">
       {/* Top Header */}
-      <div className="mx-auto max-w-4xl mb-8 flex items-center justify-between">
+      <div className="mx-auto max-w-4xl mb-6 sm:mb-8 flex items-center justify-between gap-3">
         <Logo />
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex items-center gap-2 sm:gap-3">
+          <ThemeToggle />
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition"
           >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to Dashboard
-        </Link>
+            ← Dashboard
+          </Link>
+        </div>
       </div>
 
-      <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-10 shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
+      <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 shadow-xl shadow-slate-200/30 dark:shadow-none transition-colors duration-200">
         {/* Success Modal / Banner when Club is Created */}
         {createdClub ? (
           <div className="text-center py-6">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 border border-indigo-100 text-4xl shadow-inner mb-6">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-4xl shadow-inner mb-6">
               🎉
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Club Created Successfully!
             </h2>
-            <p className="mt-2 text-base text-slate-600">
-              <span className="font-semibold text-slate-900">{createdClub.name}</span> is live. Share this unique Club ID with students and volunteers to invite them to join.
+            <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400">
+              <span className="font-semibold text-slate-900 dark:text-white">{createdClub.name}</span> is live. Share this unique Club ID with students and volunteers to invite them to join.
             </p>
 
             {/* Club Code Card */}
-            <div className="mt-8 rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+            <div className="mt-6 sm:mt-8 rounded-2xl border-2 border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/40 p-5 sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
                 Official Club Code
               </p>
               <div className="mt-2 flex items-center justify-center gap-3">
-                <span className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-indigo-950">
+                <span className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-indigo-950 dark:text-indigo-200">
                   {createdClub.club_code}
                 </span>
                 <button
                   type="button"
                   onClick={copyCode}
-                  className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm border border-indigo-200 hover:bg-indigo-50 transition active:scale-95"
+                  className="rounded-xl bg-white dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm font-semibold text-indigo-600 dark:text-indigo-400 shadow-xs border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-slate-700 transition active:scale-95"
                 >
                   {copied ? "Copied! ✓" : "Copy Code"}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 Volunteers enter this code at <strong>/joinClub</strong> to send you a join request.
               </p>
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 type="button"
                 onClick={() => router.push(`/club/${createdClub.club_code}`)}
-                className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 transition"
+                className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 transition active:scale-98"
               >
                 Open Club Workspace (/club/{createdClub.club_code}) →
               </button>
@@ -234,42 +226,42 @@ export default function CreateClubPage() {
           </div>
         ) : (
           <div>
-            <div className="border-b border-slate-100 pb-6 mb-8">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-5 sm:pb-6 mb-6 sm:mb-8">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
                 Step 1: Club Setup
               </span>
-              <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              <h1 className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Create a College Club
               </h1>
-              <p className="mt-2 text-base text-slate-500">
+              <p className="mt-2 text-sm sm:text-base text-slate-500 dark:text-slate-400">
                 Launch your club&apos;s workspace on ClubOps AI. You will become the Club Leader and can manage events, volunteers, and custom roles.
               </p>
             </div>
 
             {error && (
-              <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm text-red-700 flex items-start gap-3">
+              <div className="mb-6 rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50/80 dark:bg-red-950/40 p-4 text-sm text-red-700 dark:text-red-400 flex items-start gap-3">
                 <span className="text-lg">⚠️</span>
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               {/* Club Avatar / Icon */}
               <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200 mb-2">
                   Club Icon / Emoji
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                   {PRESET_AVATARS.map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
                       onClick={() => setSelectedAvatar(emoji)}
-                      className={`h-11 w-11 rounded-xl text-xl flex items-center justify-center transition ${
+                      className={`h-10 sm:h-11 rounded-xl text-xl flex items-center justify-center transition active:scale-95 ${
                         selectedAvatar === emoji
-                          ? "bg-indigo-600 text-white shadow-md ring-2 ring-indigo-600 ring-offset-2"
-                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                          ? "bg-indigo-600 text-white shadow-md ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-slate-900"
+                          : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {emoji}
@@ -280,8 +272,8 @@ export default function CreateClubPage() {
 
               {/* Club Name */}
               <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                  Club Name <span className="text-indigo-600">*</span>
+                <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200 mb-1.5">
+                  Club Name <span className="text-indigo-600 dark:text-indigo-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -289,97 +281,90 @@ export default function CreateClubPage() {
                   placeholder="e.g. ACM Student Chapter, Google Developer Group, Drama Club"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm sm:text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none transition"
                 />
               </div>
 
               {/* Leader Name (Auto-filled) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-1.5">
+                  <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200 mb-1.5">
                     Leader Name
                   </label>
                   <input
                     type="text"
                     required
+                    placeholder="e.g. Alex Rivera"
                     value={leaderName}
                     onChange={(e) => setLeaderName(e.target.value)}
                     disabled={fetchingUser}
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50/70 px-4 py-3 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm sm:text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none transition"
                   />
-                  <span className="mt-1 block text-xs text-slate-400">
-                    Auto-filled from your profile
-                  </span>
                 </div>
 
-                {/* Campus / Location */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                    Location / Campus
+                  <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200 mb-1.5">
+                    Campus / Location (Optional)
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Main Auditorium / North Campus"
+                    placeholder="e.g. Main Campus, Building B"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm sm:text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none transition"
                   />
                 </div>
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                  Description / Mission
+                <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200 mb-1.5">
+                  Club Description (Optional)
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="What is this club about? What events do you organize?"
+                  placeholder="What is your club's mission, goals, or activities?"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm sm:text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none transition"
                 />
               </div>
 
-              {/* Roles Available Within Club */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-slate-900">
-                    Club Roles (Assign to Volunteers)
-                  </label>
-                  <span className="text-xs text-slate-500">
-                    {roles.length} role{roles.length === 1 ? "" : "s"} defined
-                  </span>
+              {/* Defined Roles for Volunteers */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 sm:p-5">
+                <div className="mb-3">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Club Volunteer Roles
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Define the roles you will assign when volunteers submit requests to join.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500 mb-4">
-                  Define roles volunteers can take up. When a member requests to join with your Club Code, you can assign them one of these roles upon acceptance.
-                </p>
 
-                {/* Current Roles Chips */}
+                {/* Role tags list */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {roles.map((role) => (
                     <span
                       key={role}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/80 px-3 py-1.5 text-xs font-semibold text-indigo-800"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300"
                     >
                       {role}
                       <button
                         type="button"
                         onClick={() => handleRemoveRole(role)}
-                        className="text-indigo-400 hover:text-indigo-700 ml-1 transition"
-                        title="Remove role"
+                        className="text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-200 font-bold"
                       >
-                        ✕
+                        ×
                       </button>
                     </span>
                   ))}
                 </div>
 
                 {/* Add Custom Role Input */}
-                <div className="flex gap-2 mb-3">
+                <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Add a new custom role..."
+                    placeholder="Add custom role (e.g. Media Head)"
                     value={newRoleInput}
                     onChange={(e) => setNewRoleInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -388,26 +373,26 @@ export default function CreateClubPage() {
                         handleAddRole();
                       }
                     }}
-                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+                    className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none transition"
                   />
                   <button
                     type="button"
                     onClick={() => handleAddRole()}
-                    className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition"
+                    className="rounded-xl bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 px-4 py-2 text-xs font-bold text-white transition active:scale-95"
                   >
-                    + Add Role
+                    Add
                   </button>
                 </div>
 
-                {/* Quick Presets */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400 font-medium mr-1">Suggestions:</span>
-                  {PRESET_ROLES.filter((p) => !roles.includes(p)).map((preset) => (
+                {/* Quick Add Presets */}
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">Quick add:</span>
+                  {PRESET_ROLES.filter((r) => !roles.includes(r)).map((preset) => (
                     <button
                       key={preset}
                       type="button"
                       onClick={() => handleAddRole(preset)}
-                      className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition"
+                      className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-300 hover:text-indigo-600 transition"
                     >
                       + {preset}
                     </button>
@@ -416,13 +401,15 @@ export default function CreateClubPage() {
               </div>
 
               {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 hover:opacity-95 transition active:scale-[0.99] disabled:opacity-50"
-              >
-                {loading ? "Creating Club & Generating Code..." : "Create Club & Generate Code →"}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 transition active:scale-98 disabled:opacity-60"
+                >
+                  {loading ? "Generating Club Workspace..." : "Create Club & Generate Code →"}
+                </button>
+              </div>
             </form>
           </div>
         )}

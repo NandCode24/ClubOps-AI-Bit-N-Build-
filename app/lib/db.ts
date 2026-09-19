@@ -17,8 +17,27 @@ export interface DbUser {
   college_name?: string | null;
   skills: string[];
   photo_url?: string | null;
+  is_available?: boolean;
+  unavailable_until?: string | null;
+  unavailable_reason?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export function isMemberAvailable(user: {
+  is_available?: boolean | null;
+  unavailable_until?: string | Date | null;
+}): boolean {
+  if (user.is_available === false) {
+    if (user.unavailable_until) {
+      const until = new Date(user.unavailable_until).getTime();
+      if (!isNaN(until) && until <= Date.now()) {
+        return true; // Duration expired, auto-reactivated!
+      }
+    }
+    return false; // Still unavailable
+  }
+  return true;
 }
 
 export interface DbClub {
@@ -85,7 +104,7 @@ export async function getAuthUser(): Promise<DbUser | null> {
 
     // Check if user exists in Neon DB
     const existingUsers = await sql`
-      SELECT id, email, full_name, username, mobile_number, college_name, skills, photo_url, created_at, updated_at
+      SELECT id, email, full_name, username, mobile_number, college_name, skills, photo_url, is_available, unavailable_until, unavailable_reason, created_at, updated_at
       FROM users
       WHERE id = ${uid}
       LIMIT 1
@@ -102,6 +121,9 @@ export async function getAuthUser(): Promise<DbUser | null> {
         college_name: u.college_name,
         skills: u.skills || [],
         photo_url: u.photo_url,
+        is_available: u.is_available !== false,
+        unavailable_until: u.unavailable_until ? String(u.unavailable_until) : null,
+        unavailable_reason: u.unavailable_reason || null,
         created_at: u.created_at,
         updated_at: u.updated_at,
       };
@@ -113,14 +135,14 @@ export async function getAuthUser(): Promise<DbUser | null> {
     const photoURL = firebaseUser.photoURL || null;
 
     const inserted = await sql`
-      INSERT INTO users (id, email, full_name, photo_url)
-      VALUES (${uid}, ${email}, ${fullName}, ${photoURL})
+      INSERT INTO users (id, email, full_name, photo_url, is_available)
+      VALUES (${uid}, ${email}, ${fullName}, ${photoURL}, true)
       ON CONFLICT (id) DO UPDATE
       SET email = EXCLUDED.email,
           full_name = EXCLUDED.full_name,
           photo_url = COALESCE(users.photo_url, EXCLUDED.photo_url),
           updated_at = NOW()
-      RETURNING id, email, full_name, username, mobile_number, college_name, skills, photo_url, created_at, updated_at
+      RETURNING id, email, full_name, username, mobile_number, college_name, skills, photo_url, is_available, unavailable_until, unavailable_reason, created_at, updated_at
     `;
 
     const u = inserted[0];
@@ -133,6 +155,9 @@ export async function getAuthUser(): Promise<DbUser | null> {
       college_name: u.college_name,
       skills: u.skills || [],
       photo_url: u.photo_url,
+      is_available: u.is_available !== false,
+      unavailable_until: u.unavailable_until ? String(u.unavailable_until) : null,
+      unavailable_reason: u.unavailable_reason || null,
       created_at: u.created_at,
       updated_at: u.updated_at,
     };

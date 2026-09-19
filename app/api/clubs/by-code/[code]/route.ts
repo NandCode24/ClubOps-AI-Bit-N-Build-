@@ -62,7 +62,7 @@ export async function GET(
     `;
 
     // Fetch members
-    const members = await sql`
+    const memberRows = await sql`
       SELECT 
         cm.id as membership_id,
         cm.user_id,
@@ -72,7 +72,10 @@ export async function GET(
         u.full_name,
         u.email,
         u.photo_url,
-        u.skills
+        u.skills,
+        u.is_available,
+        u.unavailable_until,
+        u.unavailable_reason
       FROM club_members cm
       JOIN users u ON u.id = cm.user_id
       WHERE cm.club_id = ${club.id}
@@ -80,6 +83,33 @@ export async function GET(
         CASE WHEN cm.role_type = 'leader' THEN 0 ELSE 1 END,
         cm.joined_at ASC
     `;
+
+    const members = memberRows.map((m: Record<string, any>) => {
+      let isActive = true;
+      if (m.is_available === false) {
+        if (m.unavailable_until) {
+          const until = new Date(m.unavailable_until).getTime();
+          isActive = !isNaN(until) && until <= Date.now();
+        } else {
+          isActive = false;
+        }
+      }
+      return {
+        membership_id: String(m.membership_id),
+        user_id: String(m.user_id),
+        role_type: String(m.role_type),
+        assigned_role: m.assigned_role ? String(m.assigned_role) : null,
+        joined_at: String(m.joined_at),
+        full_name: String(m.full_name || "Member"),
+        email: String(m.email || ""),
+        photo_url: m.photo_url ? String(m.photo_url) : null,
+        skills: Array.isArray(m.skills) ? m.skills : [],
+        is_available: m.is_available !== false,
+        unavailable_until: m.unavailable_until ? String(m.unavailable_until) : null,
+        unavailable_reason: m.unavailable_reason ? String(m.unavailable_reason) : null,
+        is_active: isActive,
+      };
+    });
 
     // If leader, fetch pending join requests
     let pendingRequests: Array<{

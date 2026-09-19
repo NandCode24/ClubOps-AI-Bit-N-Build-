@@ -32,3 +32,33 @@ export function emitNewJoinRequest(clubId: string, payload: RealtimeJoinRequestE
   // Also emit to general club events for multi-club dashboards
   clubEvents.emit(`club:any:request`, payload);
 }
+
+export interface RealtimeTaskEvent {
+  action: "created" | "updated" | "status_change";
+  task_id: string;
+  club_id: string;
+  event_id: string;
+  name: string;
+  status: string;
+  assigned_to: string | null;
+  assigned_to_name?: string | null;
+  deadline: string | null;
+  updated_at: string;
+}
+
+export function emitTaskEvent(clubId: string, payload: RealtimeTaskEvent) {
+  clubEvents.emit(`club:${clubId}:tasks`, payload);
+  clubEvents.emit(`club:any:tasks`, payload);
+}
+
+export interface RealtimeEventEvent {
+  action: "created" | "updated" | "deleted";
+  event_id: string;
+  club_id: string;
+  name: string;
+}
+
+export function emitClubEventUpdate(clubId: string, payload: RealtimeEventEvent) {
+  clubEvents.emit(`club:${clubId}:events`, payload);
+}
+
