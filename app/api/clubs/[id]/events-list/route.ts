@@ -38,7 +38,9 @@ export async function GET(
       }
     }
 
-    // Fetch all events for this club with participant & task aggregates
+    const includeAll = request.nextUrl.searchParams.get("include_completed") === "true";
+
+    // Fetch active/upcoming events for this club (exclude events where deadline/end_time has passed)
     const events = await sql`
       SELECT 
         e.id,
@@ -62,10 +64,11 @@ export async function GET(
       FROM events e
       LEFT JOIN users u ON u.id = e.created_by
       WHERE e.club_id = ${clubId}
+        AND (${includeAll} = true OR e.end_time IS NULL OR e.end_time >= NOW())
       ORDER BY e.start_time ASC
     `;
 
-    // Fetch all tasks for events in this club so volunteers can see all tasks across events
+    // Fetch all tasks for active events in this club
     const allClubTasks = await sql`
       SELECT 
         t.id,
@@ -86,6 +89,7 @@ export async function GET(
       JOIN events e ON e.id = t.event_id
       LEFT JOIN users u ON u.id = t.assigned_to
       WHERE e.club_id = ${clubId}
+        AND (${includeAll} = true OR e.end_time IS NULL OR e.end_time >= NOW())
       ORDER BY 
         CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END,
         t.deadline ASC NULLS LAST,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, sql } from "../../../lib/db";
+import { emitClubEventUpdate } from "../../../lib/events";
 
 export const runtime = "nodejs";
 
@@ -160,6 +161,68 @@ export async function GET(
     console.error("Error in GET /api/events/[id]:", error);
     return NextResponse.json(
       { success: false, message: error instanceof Error ? error.message : "Failed to load event." },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/events/[id] - Delete event (LEADER ONLY)
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await getAuthUser();
+    if (!user) {
+      return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+    }
+
+    const { id: eventId } = await context.params;
+
+    // Verify event and leader status
+    const eventRows = await sql`
+      SELECT e.id, e.club_id, e.name as event_name, c.leader_id, c.club_code
+      FROM events e
+      JOIN clubs c ON c.id = e.club_id
+      WHERE e.id = ${eventId}
+      LIMIT 1
+    `;
+
+    if (eventRows.length === 0) {
+      return NextResponse.json({ success: false, message: "Event not found." }, { status: 404 });
+    }
+
+    const event = eventRows[0];
+    if (event.leader_id !== user.id) {
+      return NextResponse.json(
+        { success: false, message: "Access denied. Only the Club Leader can delete this event." },
+        { status: 403 }
+      );
+    }
+
+    // Delete announcements for this event
+    await sql`DELETE FROM announcements WHERE event_id = ${eventId}`;
+
+    // Delete event (tasks and event_participants will cascade delete)
+    await sql`DELETE FROM events WHERE id = ${eventId}`;
+
+    // Emit real-time notification
+    emitClubEventUpdate(event.club_id, {
+      action: "deleted",
+      club_id: event.club_id,
+      event_id: eventId,
+      name: event.event_name,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Event "${event.event_name}" deleted successfully.`,
+      club_code: event.club_code,
+    });
+  } catch (error) {
+    console.error("Error in DELETE /api/events/[id]:", error);
+    return NextResponse.json(
+      { success: false, message: error instanceof Error ? error.message : "Failed to delete event." },
       { status: 500 }
     );
   }

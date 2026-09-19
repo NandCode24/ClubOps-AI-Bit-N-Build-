@@ -52,10 +52,12 @@ export function emitTaskEvent(clubId: string, payload: RealtimeTaskEvent) {
 }
 
 export interface RealtimeEventEvent {
-  action: "created" | "updated" | "deleted";
-  event_id: string;
+  action: "created" | "updated" | "deleted" | "participant_added" | "participant_removed" | "announcement_posted";
+  event_id?: string;
   club_id: string;
-  name: string;
+  name?: string;
+  user_id?: string;
+  announcement?: any;
 }
 
 export function emitClubEventUpdate(clubId: string, payload: RealtimeEventEvent) {
