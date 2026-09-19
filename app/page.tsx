@@ -10,23 +10,23 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] text-slate-900 dark:text-white selection:bg-indigo-500 selection:text-white relative overflow-hidden font-sans transition-colors duration-200">
       {/* Background Glow Elements */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-tr from-indigo-400/20 via-violet-400/15 to-purple-500/10 dark:from-indigo-600/25 dark:via-violet-600/20 dark:to-purple-800/10 blur-[130px] rounded-full" />
-      <div className="pointer-events-none absolute top-1/2 -right-40 w-[600px] h-[400px] bg-indigo-500/10 dark:bg-indigo-500/10 blur-[120px] rounded-full" />
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[340px] sm:w-[700px] md:w-[900px] h-[350px] sm:h-[500px] bg-gradient-to-tr from-indigo-400/20 via-violet-400/15 to-purple-500/10 dark:from-indigo-600/25 dark:via-violet-600/20 dark:to-purple-800/10 blur-[90px] sm:blur-[130px] rounded-full" />
+      <div className="pointer-events-none absolute top-1/2 -right-40 w-[280px] sm:w-[500px] h-[300px] sm:h-[400px] bg-indigo-500/10 dark:bg-indigo-500/10 blur-[80px] sm:blur-[120px] rounded-full" />
 
       {/* Navigation */}
-      <header className="relative z-30 border-b border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-md px-4 py-3.5 sm:px-8 sm:py-4.5">
+      <header className="relative z-30 border-b border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-md px-3 sm:px-8 py-3 sm:py-4.5">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-            <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
+            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="sm:w-[22px] sm:h-[22px]">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
               </svg>
             </div>
-            <div>
-              <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <span className="text-base sm:text-xl font-black tracking-tight text-slate-900 dark:text-white truncate block">
                 ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
               </span>
-              <span className="hidden sm:block text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <span className="hidden sm:block text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 truncate">
                 Centralized Operations Platform
               </span>
             </div>
@@ -56,7 +56,7 @@ export default function Home() {
           </div>
 
           {/* Mobile Action Row */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-2 shrink-0">
             <ThemeToggle />
             <button
               type="button"
@@ -104,10 +104,10 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="relative z-10 mx-auto max-w-6xl px-4 pt-12 pb-20 sm:px-6 sm:pt-24 sm:pb-28 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/80 dark:bg-indigo-500/10 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 backdrop-blur-md mb-6 sm:mb-8">
-          <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-          Centralized AI-Powered Event Operations for College Clubs
+      <main className="relative z-10 mx-auto max-w-6xl px-3 pt-8 pb-20 sm:px-6 sm:pt-20 sm:pb-28 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/80 dark:bg-indigo-500/10 px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-indigo-700 dark:text-indigo-300 backdrop-blur-md mb-6 sm:mb-8 max-w-full">
+          <span className="flex h-2 w-2 shrink-0 rounded-full bg-indigo-500 animate-pulse" />
+          <span className="truncate sm:whitespace-normal">Centralized AI Operations for College Clubs</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-slate-900 dark:text-white max-w-4xl mx-auto leading-[1.15]">

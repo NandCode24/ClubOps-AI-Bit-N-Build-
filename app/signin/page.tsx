@@ -203,16 +203,16 @@ export default function SignInPage() {
         <ThemeToggle />
       </div>
 
-      <div className="mx-auto w-full max-w-[620px] rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 px-6 py-8 sm:px-12 sm:py-12 shadow-xl shadow-slate-200/40 dark:shadow-none backdrop-blur-md transition-colors duration-200">
+      <div className="mx-auto w-full max-w-[540px] rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 sm:p-10 md:p-12 shadow-xl shadow-slate-200/40 dark:shadow-none backdrop-blur-md transition-colors duration-200">
         <div className="flex flex-col items-center">
           <Logo />
 
-          <div className="mt-8 sm:mt-10 text-center">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <div className="mt-6 sm:mt-10 text-center">
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Welcome back
             </h1>
 
-            <p className="mt-2 text-sm sm:text-base text-slate-500 dark:text-slate-400">
+            <p className="mt-1.5 text-xs sm:text-base text-slate-500 dark:text-slate-400">
               Sign in to manage your clubs and event tasks.
             </p>
           </div>

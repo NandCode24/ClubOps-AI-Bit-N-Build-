@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "../components/ThemeToggle";
+import MobileBottomNav from "../components/MobileBottomNav";
 
 interface UserProfile {
   id: string;
@@ -37,14 +38,15 @@ const POPULAR_SKILLS = [
 
 function Logo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20">
+    <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 min-w-0 group">
+      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
         <svg
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className="sm:w-5 sm:h-5"
         >
           <path
             d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
@@ -52,11 +54,11 @@ function Logo() {
           />
         </svg>
       </div>
-      <div>
-        <span className="text-[19px] font-bold tracking-tight text-slate-900 dark:text-white">
+      <div className="min-w-0">
+        <span className="text-[15px] sm:text-[19px] font-bold tracking-tight text-slate-900 dark:text-white truncate block">
           ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
         </span>
-        <span className="block text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="hidden sm:block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
           Profile &amp; Availability
         </span>
       </div>
@@ -267,22 +269,22 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-3.5 sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3.5">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
           <Logo />
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <ThemeToggle />
             <Link
               href="/dashboard"
-              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
-              ← <span className="hidden sm:inline">Back to Dashboard</span><span className="sm:hidden">Dashboard</span>
+              ← <span className="hidden sm:inline">Back to </span>Dashboard
             </Link>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8 sm:px-6">
+      <div className="mx-auto max-w-4xl px-3 sm:px-6 py-4 sm:py-8 pb-24 md:pb-8">
         {/* Breadcrumb */}
         <div className="mb-4 flex items-center gap-2 text-xs font-medium text-slate-400 dark:text-slate-500">
           <Link href="/dashboard" className="hover:text-slate-600 dark:hover:text-slate-300 transition">
@@ -294,7 +296,7 @@ export default function ProfilePage() {
 
         {/* Page Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             My Profile, Skills &amp; Availability
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -324,7 +326,7 @@ export default function ProfilePage() {
 
         <div className="space-y-6 sm:space-y-8">
           {/* 1. AVAILABILITY & ROLE DEACTIVATION SECTION */}
-          <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-xs">
+          <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs">
             <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-6">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold text-lg">
                 ⏱️
@@ -393,7 +395,7 @@ export default function ProfilePage() {
                     type="button"
                     disabled={saving}
                     onClick={handleReactivateNow}
-                    className="self-start sm:self-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 active:scale-95 transition disabled:opacity-50 shrink-0"
+                    className="self-start sm:self-center min-h-[44px] flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 active:scale-95 transition disabled:opacity-50 shrink-0"
                   >
                     ✓ Reactivate Immediately
                   </button>
@@ -471,7 +473,7 @@ export default function ProfilePage() {
                     type="button"
                     disabled={saving}
                     onClick={handleSetAway}
-                    className="w-full sm:w-auto rounded-xl bg-slate-900 dark:bg-slate-100 px-5 py-2.5 text-xs font-bold text-white dark:text-slate-900 shadow-xs hover:bg-slate-800 dark:hover:bg-white active:scale-95 transition disabled:opacity-50"
+                    className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-slate-900 dark:bg-slate-100 px-5 py-2.5 text-xs font-bold text-white dark:text-slate-900 shadow-xs hover:bg-slate-800 dark:hover:bg-white active:scale-95 transition disabled:opacity-50"
                   >
                     {saving ? "Saving..." : "Set as Away / Deactivate Temporarily"}
                   </button>
@@ -485,7 +487,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 2. SKILLS MANAGEMENT ("SKILLET") */}
-          <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-xs space-y-5 sm:space-y-6">
+          <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs space-y-5 sm:space-y-6">
             <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold text-lg">
                 🎯
@@ -533,7 +535,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Custom Skill Input */}
-            <div className="flex gap-2 max-w-md">
+            <div className="flex flex-col sm:flex-row gap-2 max-w-md">
               <input
                 type="text"
                 value={customSkill}
@@ -544,15 +546,15 @@ export default function ProfilePage() {
                     handleAddSkill(customSkill);
                   }
                 }}
-                placeholder="Type a skill and press Add (e.g. Figma, Canva, DJing)..."
-                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition"
+                placeholder="Type a skill (e.g. Figma, Canva, DJing)..."
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition min-h-[44px]"
               />
               <button
                 type="button"
                 onClick={() => handleAddSkill(customSkill)}
-                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition"
+                className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition min-h-[44px] flex items-center justify-center shrink-0"
               >
-                + Add
+                + Add Skill
               </button>
             </div>
 
@@ -577,7 +579,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 3. PROFILE DETAILS */}
-          <form onSubmit={handleSaveProfile} className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-xs space-y-5 sm:space-y-6">
+          <form onSubmit={handleSaveProfile} className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs space-y-5 sm:space-y-6">
             <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold text-lg">
                 👤
@@ -645,7 +647,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:from-indigo-500 hover:to-violet-500 active:scale-95 transition disabled:opacity-50"
+                className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-xs hover:from-indigo-500 hover:to-violet-500 active:scale-95 transition disabled:opacity-50 min-h-[48px]"
               >
                 {saving ? "Saving Changes..." : "Save Profile Details"}
               </button>
@@ -653,6 +655,9 @@ export default function ProfilePage() {
           </form>
         </div>
       </div>
+
+      {/* Persistent Mobile Bottom Navigation Bar */}
+      <MobileBottomNav />
     </main>
   );
 }

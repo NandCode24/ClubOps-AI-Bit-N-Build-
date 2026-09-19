@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/app/components/ThemeToggle";
+import MobileBottomNav from "@/app/components/MobileBottomNav";
 
 interface Member {
   membership_id: string;
@@ -75,14 +76,15 @@ interface ClubEventSummary {
 
 function Logo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-2.5 sm:gap-3 group">
-      <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+    <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 min-w-0 group">
+      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
         <svg
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className="sm:w-5 sm:h-5"
         >
           <path
             d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
@@ -90,11 +92,11 @@ function Logo() {
           />
         </svg>
       </div>
-      <div>
-        <span className="text-[17px] sm:text-[19px] font-bold tracking-tight text-slate-900 dark:text-white">
+      <div className="min-w-0">
+        <span className="text-[15px] sm:text-[19px] font-bold tracking-tight text-slate-900 dark:text-white truncate block">
           ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
         </span>
-        <span className="block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="hidden sm:block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
           Dynamic Club Workspace
         </span>
       </div>
@@ -379,18 +381,18 @@ export default function ClubDynamicPage({
   return (
     <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] transition-colors duration-200">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md px-3 sm:px-8 py-3 transition-colors duration-200">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3 transition-colors duration-200">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
           <Logo />
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <ThemeToggle />
 
             <Link
               href="/profile"
-              className="rounded-xl border border-indigo-200/70 dark:border-indigo-800/70 bg-indigo-50/70 dark:bg-indigo-950/60 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition"
+              className="hidden sm:inline-flex items-center rounded-xl border border-indigo-200/70 dark:border-indigo-800/70 bg-indigo-50/70 dark:bg-indigo-950/60 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition"
             >
-              👤 <span className="hidden xs:inline">Profile</span>
+              👤 Profile
             </Link>
 
             <Link
@@ -399,32 +401,25 @@ export default function ClubDynamicPage({
             >
               ← <span className="hidden sm:inline">My </span>Dashboard
             </Link>
-
-            <Link
-              href="/joinClub"
-              className="rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition hidden md:inline-block"
-            >
-              Join Another
-            </Link>
           </div>
         </div>
       </header>
 
       {/* Main Dynamic View */}
-      <div className="mx-auto max-w-7xl px-3 sm:px-8 py-6 sm:py-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-8 py-4 sm:py-8 pb-28 md:pb-8">
         {/* Real-time Floating Popup Notification */}
         {newRequestPopup && (
-          <div className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm rounded-2xl border-2 border-indigo-400 dark:border-indigo-500 bg-white dark:bg-slate-900 p-4 shadow-2xl ring-4 ring-indigo-500/20 transition-all">
+          <div className="fixed top-16 sm:top-20 left-3 right-3 sm:left-auto sm:right-6 z-50 sm:max-w-sm rounded-2xl border-2 border-indigo-400 dark:border-indigo-500 bg-white dark:bg-slate-900 p-4 shadow-2xl ring-4 ring-indigo-500/20 transition-all">
             <div className="flex items-start gap-3">
-              <span className="text-2xl animate-bounce">🔔</span>
-              <div className="flex-1">
+              <span className="text-2xl animate-bounce shrink-0">🔔</span>
+              <div className="flex-1 min-w-0">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md">
                   Live Volunteer Request!
                 </span>
-                <h4 className="font-extrabold text-slate-900 dark:text-white text-sm mt-1">
+                <h4 className="font-extrabold text-slate-900 dark:text-white text-sm mt-1 truncate">
                   {newRequestPopup.name} wants to join!
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{newRequestPopup.email}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{newRequestPopup.email}</p>
                 {newRequestPopup.message && (
                   <p className="text-xs text-slate-600 dark:text-slate-300 italic mt-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1.5 rounded-md">
                     &ldquo;{newRequestPopup.message}&rdquo;
@@ -442,7 +437,7 @@ export default function ClubDynamicPage({
           </div>
         )}
         {/* Dynamic Route Breadcrumb */}
-        <div className="mb-4 flex items-center gap-2 text-xs font-medium text-slate-400 dark:text-slate-500">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-400 dark:text-slate-500">
           <Link href="/dashboard" className="hover:text-slate-600 dark:hover:text-slate-300 transition">
             Dashboard
           </Link>
@@ -473,22 +468,22 @@ export default function ClubDynamicPage({
         )}
 
         {/* Hero Card */}
-        <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] dark:shadow-none mb-8 transition-colors duration-200">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-3xl shadow-sm">
+        <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] dark:shadow-none mb-6 sm:mb-8 transition-colors duration-200">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
+            <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+              <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-2xl sm:text-3xl shadow-sm">
                 {club.profile_image || "🏛️"}
               </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white break-words">
                     {club.name}
                   </h1>
-                  <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                     {club.location || "Campus"}
                   </span>
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
                       club.is_leader
                         ? "bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300"
                         : "bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300"
@@ -497,11 +492,11 @@ export default function ClubDynamicPage({
                     {club.is_leader ? "👑 Leader" : `🤝 ${club.user_role || "Member"}`}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                   Led by <strong className="text-slate-700 dark:text-slate-200">{club.leader_name}</strong> • {club.member_count} active member{club.member_count === 1 ? "" : "s"}
                 </p>
                 {club.description && (
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+                  <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
                     {club.description}
                   </p>
                 )}
@@ -509,12 +504,12 @@ export default function ClubDynamicPage({
             </div>
 
             {/* Club Code Card */}
-            <div className="rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/50 dark:bg-indigo-950/40 p-4 sm:p-5 text-center min-w-[240px]">
+            <div className="rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/50 dark:bg-indigo-950/40 p-4 sm:p-5 text-center w-full md:w-auto md:min-w-[240px]">
               <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
                 Official Club Code
               </span>
               <div className="mt-1 flex items-center justify-center gap-2">
-                <span className="font-mono text-2xl font-black tracking-widest text-indigo-950 dark:text-indigo-200">
+                <span className="font-mono text-xl sm:text-2xl font-black tracking-widest text-indigo-950 dark:text-indigo-200">
                   {club.club_code}
                 </span>
                 <button
@@ -694,14 +689,14 @@ export default function ClubDynamicPage({
 
         {/* LEADER SECTION: Pending Volunteer Join Requests */}
         {club.is_leader && (
-          <div className="mb-8 rounded-3xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/20 p-6 sm:p-8 shadow-xs transition-colors duration-200">
+          <div className="mb-8 rounded-3xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/20 p-4 sm:p-6 md:p-8 shadow-xs transition-colors duration-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-base">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-base">
                   📬
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                     Pending Volunteer Join Requests
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -709,7 +704,7 @@ export default function ClubDynamicPage({
                   </p>
                 </div>
               </div>
-              <span className="rounded-full bg-amber-100 dark:bg-amber-900/60 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200">
+              <span className="shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/60 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200">
                 {club.pendingRequests?.length || 0} Pending
               </span>
             </div>
@@ -723,18 +718,18 @@ export default function ClubDynamicPage({
                 {club.pendingRequests.map((req) => (
                   <div
                     key={req.request_id}
-                    className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                   >
-                    <div className="flex items-start gap-3.5">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-sm font-bold text-white">
+                    <div className="flex items-start gap-3.5 min-w-0">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-sm font-bold text-white">
                         {req.full_name?.charAt(0) || "V"}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
                             {req.full_name}
                           </h3>
-                          <span className="text-xs text-slate-400 dark:text-slate-500">
+                          <span className="text-xs text-slate-400 dark:text-slate-500 break-all">
                             ({req.email})
                           </span>
                         </div>
@@ -762,8 +757,8 @@ export default function ClubDynamicPage({
                     </div>
 
                     {/* Role assignment and actions */}
-                    <div className="flex flex-wrap items-center gap-2.5 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2.5 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800 w-full lg:w-auto">
+                      <div className="flex items-center gap-1.5 w-full sm:w-auto">
                         <label htmlFor={`dyn-role-select-${req.request_id}`} className="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
                           Assign Role:
                         </label>
@@ -776,7 +771,7 @@ export default function ClubDynamicPage({
                               [req.request_id]: e.target.value,
                             })
                           }
-                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"
+                          className="flex-1 sm:flex-initial rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none min-h-[40px]"
                         >
                           {club.roles?.map((r) => (
                             <option key={r.id} value={r.role_name}>
@@ -786,23 +781,25 @@ export default function ClubDynamicPage({
                         </select>
                       </div>
 
-                      <button
-                        type="button"
-                        disabled={actionLoading === req.request_id}
-                        onClick={() => handleRequestAction(req.request_id, "accept")}
-                        className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 active:scale-95 transition disabled:opacity-50"
-                      >
-                        {actionLoading === req.request_id ? "Processing..." : "✓ Accept & Assign"}
-                      </button>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          disabled={actionLoading === req.request_id}
+                          onClick={() => handleRequestAction(req.request_id, "accept")}
+                          className="flex-1 sm:flex-initial rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 active:scale-95 transition disabled:opacity-50 min-h-[40px] flex items-center justify-center"
+                        >
+                          {actionLoading === req.request_id ? "Processing..." : "✓ Accept & Assign"}
+                        </button>
 
-                      <button
-                        type="button"
-                        disabled={actionLoading === req.request_id}
-                        onClick={() => handleRequestAction(req.request_id, "reject")}
-                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
-                      >
-                        Decline
-                      </button>
+                        <button
+                          type="button"
+                          disabled={actionLoading === req.request_id}
+                          onClick={() => handleRequestAction(req.request_id, "reject")}
+                          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50 min-h-[40px] flex items-center justify-center"
+                        >
+                          Decline
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -812,10 +809,10 @@ export default function ClubDynamicPage({
         )}
 
         {/* Club Members Directory */}
-        <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] dark:shadow-none transition-colors duration-200">
-          <div className="flex items-center justify-between mb-6">
+        <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] dark:shadow-none transition-colors duration-200">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
                 Club Members &amp; Volunteers
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -827,7 +824,65 @@ export default function ClubDynamicPage({
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Member Cards (No horizontal scroll needed on mobile) */}
+          <div className="md:hidden space-y-3">
+            {club.members?.map((m) => (
+              <div
+                key={m.membership_id}
+                className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 space-y-2.5 transition active:scale-[0.99]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-bold text-xs">
+                      {m.full_name?.charAt(0) || "U"}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">
+                        {m.full_name}
+                      </span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate block">
+                        {m.email}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                      m.role_type === "leader"
+                        ? "bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300"
+                        : "bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {m.role_type === "leader" ? "👑 Leader" : "Volunteer"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Assigned: <strong className="text-slate-800 dark:text-slate-200">{m.assigned_role || "Volunteer"}</strong>
+                  </span>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                    {m.joined_at ? new Date(m.joined_at).toLocaleDateString() : "Recently"}
+                  </span>
+                </div>
+
+                {m.skills && m.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {m.skills.map((s, idx) => (
+                      <span
+                        key={idx}
+                        className="rounded bg-slate-200/60 dark:bg-slate-700/60 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -898,6 +953,9 @@ export default function ClubDynamicPage({
           </div>
         </div>
       </div>
+
+      {/* Persistent Mobile Bottom Navigation Bar */}
+      <MobileBottomNav clubCode={club.club_code} />
     </main>
   );
 }

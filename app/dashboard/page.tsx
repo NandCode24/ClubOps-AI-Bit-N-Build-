@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ThemeToggle } from "../components/ThemeToggle";
+import ThemeToggle from "../components/ThemeToggle";
+import MobileBottomNav from "../components/MobileBottomNav";
 
 interface Member {
   membership_id: string;
@@ -66,14 +67,15 @@ interface DashboardUser {
 
 function Logo() {
   return (
-    <div className="flex items-center gap-2.5 sm:gap-3">
-      <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20">
         <svg
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className="sm:w-5 sm:h-5"
         >
           <path
             d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
@@ -81,11 +83,11 @@ function Logo() {
           />
         </svg>
       </div>
-      <div>
-        <span className="text-[17px] sm:text-[19px] font-bold tracking-tight text-slate-900 dark:text-white">
+      <div className="min-w-0">
+        <span className="text-[15px] sm:text-[19px] font-bold tracking-tight text-slate-900 dark:text-white truncate block">
           ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
         </span>
-        <span className="block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="hidden sm:block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
           Event Operations
         </span>
       </div>
@@ -356,14 +358,14 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] transition-colors duration-200">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md px-3 sm:px-8 py-3 transition-colors duration-200">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3 transition-colors duration-200">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
           <Logo />
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <ThemeToggle />
 
-            {/* Quick Links */}
+            {/* Quick Links on tablet/desktop (handled by MobileBottomNav on mobile) */}
             <Link
               href="/createClub"
               className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-2xs transition"
@@ -373,9 +375,9 @@ export default function DashboardPage() {
 
             <Link
               href="/joinClub"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-800/60 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-800/60 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition"
             >
-              <span>🔗</span> <span className="hidden xs:inline">Join Club</span>
+              <span>🔗</span> Join Club
             </Link>
 
             {/* User Profile Link */}
@@ -384,7 +386,7 @@ export default function DashboardPage() {
               className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-800 pl-2 sm:pl-3 hover:opacity-85 transition group"
               title="View Profile, Skills & Availability"
             >
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 text-xs font-bold text-white shadow-xs group-hover:ring-2 ring-indigo-500/30 transition">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 text-xs font-bold text-white shadow-xs group-hover:ring-2 ring-indigo-500/30 transition">
                 {user?.full_name?.charAt(0) || "U"}
               </div>
               <div className="hidden md:block text-left">
@@ -411,20 +413,20 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Body */}
-      <div className="mx-auto max-w-7xl px-3 sm:px-8 py-6 sm:py-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-8 py-4 sm:py-8 pb-28 md:pb-8">
         {/* Real-time Floating Popup Notification */}
         {newRequestPopup && (
-          <div className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm rounded-2xl border-2 border-indigo-400 dark:border-indigo-500 bg-white dark:bg-slate-900 p-4 shadow-2xl ring-4 ring-indigo-500/20 transition-all">
+          <div className="fixed top-16 sm:top-20 left-3 right-3 sm:left-auto sm:right-6 z-50 sm:max-w-sm rounded-2xl border-2 border-indigo-400 dark:border-indigo-500 bg-white dark:bg-slate-900 p-4 shadow-2xl ring-4 ring-indigo-500/20 transition-all">
             <div className="flex items-start gap-3">
-              <span className="text-2xl animate-bounce">🔔</span>
-              <div className="flex-1">
+              <span className="text-2xl animate-bounce shrink-0">🔔</span>
+              <div className="flex-1 min-w-0">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md">
                   Live Volunteer Request!
                 </span>
-                <h4 className="font-extrabold text-slate-900 dark:text-white text-sm mt-1">
+                <h4 className="font-extrabold text-slate-900 dark:text-white text-sm mt-1 truncate">
                   {newRequestPopup.name} wants to join!
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{newRequestPopup.email}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{newRequestPopup.email}</p>
                 {newRequestPopup.message && (
                   <p className="text-xs text-slate-600 dark:text-slate-300 italic mt-1.5 bg-slate-50 dark:bg-slate-800/80 p-1.5 rounded-md border border-slate-100 dark:border-slate-700">
                     &ldquo;{newRequestPopup.message}&rdquo;
@@ -517,15 +519,15 @@ export default function DashboardPage() {
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
               {/* Club selector if user is in multiple clubs */}
               {clubs.length > 1 ? (
-                <div className="flex items-center gap-2">
-                  <label htmlFor="club-select" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-2 max-w-full min-w-0">
+                  <label htmlFor="club-select" className="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
                     Active Club:
                   </label>
                   <select
                     id="club-select"
                     value={activeClub.id}
                     onChange={(e) => loadDashboard(e.target.value)}
-                    className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-sm font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"
+                    className="flex-1 sm:flex-initial max-w-[220px] sm:max-w-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none truncate"
                   >
                     {clubs.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -542,16 +544,16 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <Link
                   href="/createClub"
-                  className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition"
                 >
                   + New Club
                 </Link>
                 <Link
                   href="/joinClub"
-                  className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition"
                 >
                   + Join Another
                 </Link>
@@ -579,26 +581,26 @@ export default function DashboardPage() {
             )}
 
             {/* Club Hero Banner */}
-            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] dark:shadow-none mb-8 transition-colors duration-200">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-3xl shadow-sm">
+            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] dark:shadow-none mb-6 sm:mb-8 transition-colors duration-200">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
+                <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                  <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-2xl sm:text-3xl shadow-sm">
                     {activeClub.profile_image || "🏛️"}
                   </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white break-words">
                         {activeClub.name}
                       </h1>
-                      <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                         {activeClub.location || "Campus"}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                       Led by <strong className="text-slate-700 dark:text-slate-200">{activeClub.leader_name}</strong> • {activeClub.member_count} active member{activeClub.member_count === 1 ? "" : "s"}
                     </p>
                     {activeClub.description && (
-                      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+                      <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
                         {activeClub.description}
                       </p>
                     )}
@@ -606,13 +608,13 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Club Code Share Card & Dynamic Route Link */}
-                <div className="flex flex-col items-stretch gap-2.5 min-w-[240px]">
+                <div className="flex flex-col items-stretch gap-2.5 w-full md:w-auto md:min-w-[240px]">
                   <div className="rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/50 dark:bg-indigo-950/40 p-4 sm:p-5 text-center">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
                       Club Invite Code
                     </span>
                     <div className="mt-1 flex items-center justify-center gap-2">
-                      <span className="font-mono text-2xl font-black tracking-widest text-indigo-950 dark:text-indigo-200">
+                      <span className="font-mono text-xl sm:text-2xl font-black tracking-widest text-indigo-950 dark:text-indigo-200">
                         {activeClub.club_code}
                       </span>
                       <button
@@ -630,7 +632,7 @@ export default function DashboardPage() {
 
                   <Link
                     href={`/club/${activeClub.club_code}`}
-                    className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-2.5 px-4 text-center text-xs font-bold text-white shadow-sm hover:opacity-95 transition"
+                    className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3 px-4 text-center text-xs font-bold text-white shadow-sm hover:opacity-95 transition"
                   >
                     Open Dedicated Workspace (/club/{activeClub.club_code}) →
                   </Link>
@@ -656,14 +658,14 @@ export default function DashboardPage() {
             </div>
 
             {/* EVENTS & OPERATIONS PREVIEW */}
-            <div className="mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-xs transition-colors duration-200">
+            <div className="mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs transition-colors duration-200">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-lg">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-lg">
                     🗓️
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                       Club Events & Tasks ({clubEventsList.length})
                     </h2>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -672,18 +674,18 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {activeClub.is_leader && (
                     <Link
                       href={`/club/${activeClub.club_code}/create-event`}
-                      className="rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition"
+                      className="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition"
                     >
                       + Create Event
                     </Link>
                   )}
                   <Link
                     href={`/club/${activeClub.club_code}`}
-                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                   >
                     View All in Club Workspace →
                   </Link>
@@ -747,14 +749,14 @@ export default function DashboardPage() {
 
             {/* LEADER SECTION: Pending Volunteer Join Requests */}
             {activeClub.is_leader && (
-              <div className="mb-8 rounded-3xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/20 p-6 sm:p-8 shadow-xs transition-colors duration-200">
+              <div className="mb-8 rounded-3xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/20 p-4 sm:p-6 md:p-8 shadow-xs transition-colors duration-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-base">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-base">
                       📬
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                         Pending Volunteer Join Requests
                       </h2>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -762,7 +764,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="rounded-full bg-amber-100 dark:bg-amber-900/60 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200">
+                  <span className="shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/60 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200">
                     {activeClub.pendingRequests?.length || 0} Pending
                   </span>
                 </div>
@@ -777,18 +779,18 @@ export default function DashboardPage() {
                     {activeClub.pendingRequests.map((req) => (
                       <div
                         key={req.request_id}
-                        className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                        className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                       >
-                        <div className="flex items-start gap-3.5">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-sm font-bold text-white">
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-sm font-bold text-white">
                             {req.full_name?.charAt(0) || "V"}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
                                 {req.full_name}
                               </h3>
-                              <span className="text-xs text-slate-400 dark:text-slate-500">
+                              <span className="text-xs text-slate-400 dark:text-slate-500 break-all">
                                 ({req.email})
                               </span>
                             </div>
@@ -817,8 +819,8 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Leader Actions: Select Role & Accept/Reject */}
-                        <div className="flex flex-wrap items-center gap-2.5 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
-                          <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-2.5 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800 w-full lg:w-auto">
+                          <div className="flex items-center gap-1.5 w-full sm:w-auto">
                             <label htmlFor={`role-select-${req.request_id}`} className="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
                               Assign Role:
                             </label>
@@ -831,7 +833,7 @@ export default function DashboardPage() {
                                   [req.request_id]: e.target.value,
                                 })
                               }
-                              className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"
+                              className="flex-1 sm:flex-initial rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none min-h-[40px]"
                             >
                               {activeClub.roles?.map((r) => (
                                 <option key={r.id} value={r.role_name}>
@@ -841,23 +843,25 @@ export default function DashboardPage() {
                             </select>
                           </div>
 
-                          <button
-                            type="button"
-                            disabled={actionLoading === req.request_id}
-                            onClick={() => handleRequestAction(req.request_id, "accept")}
-                            className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 active:scale-95 transition disabled:opacity-50"
-                          >
-                            {actionLoading === req.request_id ? "Processing..." : "✓ Accept & Assign"}
-                          </button>
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <button
+                              type="button"
+                              disabled={actionLoading === req.request_id}
+                              onClick={() => handleRequestAction(req.request_id, "accept")}
+                              className="flex-1 sm:flex-initial rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 active:scale-95 transition disabled:opacity-50 min-h-[40px] flex items-center justify-center"
+                            >
+                              {actionLoading === req.request_id ? "Processing..." : "✓ Accept & Assign"}
+                            </button>
 
-                          <button
-                            type="button"
-                            disabled={actionLoading === req.request_id}
-                            onClick={() => handleRequestAction(req.request_id, "reject")}
-                            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
-                          >
-                            Decline
-                          </button>
+                            <button
+                              type="button"
+                              disabled={actionLoading === req.request_id}
+                              onClick={() => handleRequestAction(req.request_id, "reject")}
+                              className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-50 min-h-[40px] flex items-center justify-center"
+                            >
+                              Decline
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -867,10 +871,10 @@ export default function DashboardPage() {
             )}
 
             {/* Club Members Directory */}
-            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] dark:shadow-none transition-colors duration-200">
-              <div className="flex items-center justify-between mb-6">
+            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] dark:shadow-none transition-colors duration-200">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
                     Club Members &amp; Volunteers
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -882,7 +886,65 @@ export default function DashboardPage() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile Member Cards (No awkward horizontal scroll on phone) */}
+              <div className="md:hidden space-y-3">
+                {activeClub.members?.map((m) => (
+                  <div
+                    key={m.membership_id}
+                    className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 space-y-2.5 transition active:scale-[0.99]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 text-white font-bold text-xs">
+                          {m.full_name?.charAt(0) || "U"}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">
+                            {m.full_name}
+                          </span>
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate block">
+                            {m.email}
+                          </span>
+                        </div>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          m.role_type === "leader"
+                            ? "bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300"
+                            : "bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        {m.role_type === "leader" ? "👑 Leader" : "Volunteer"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        Assigned: <strong className="text-slate-800 dark:text-slate-200">{m.assigned_role || "Volunteer"}</strong>
+                      </span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                        {m.joined_at ? new Date(m.joined_at).toLocaleDateString() : "Recently"}
+                      </span>
+                    </div>
+
+                    {m.skills && m.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {m.skills.map((s, idx) => (
+                          <span
+                            key={idx}
+                            className="rounded bg-slate-200/60 dark:bg-slate-700/60 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -955,6 +1017,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Persistent Mobile Bottom Navigation Bar */}
+      <MobileBottomNav clubCode={activeClub?.club_code} />
     </main>
   );
 }

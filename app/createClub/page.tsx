@@ -3,7 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ThemeToggle } from "../components/ThemeToggle";
+import ThemeToggle from "../components/ThemeToggle";
+import MobileBottomNav from "../components/MobileBottomNav";
 
 const PRESET_ROLES = [
   "Technical Lead",
@@ -20,14 +21,15 @@ const PRESET_AVATARS = [
 
 function Logo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-2.5 sm:gap-3 group">
-      <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+    <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 min-w-0 group">
+      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
         <svg
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className="sm:w-5 sm:h-5"
         >
           <path
             d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
@@ -35,11 +37,11 @@ function Logo() {
           />
         </svg>
       </div>
-      <div>
-        <span className="text-[18px] sm:text-[20px] font-bold tracking-tight text-slate-900 dark:text-white">
+      <div className="min-w-0">
+        <span className="text-[15px] sm:text-[19px] font-bold tracking-tight text-slate-900 dark:text-white truncate block">
           ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
         </span>
-        <span className="block text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="hidden sm:block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
           Event Operations
         </span>
       </div>
@@ -163,7 +165,7 @@ export default function CreateClubPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-colors duration-200">
+    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-3 py-4 sm:px-6 sm:py-12 pb-24 md:pb-8 transition-colors duration-200">
       {/* Top Header */}
       <div className="mx-auto max-w-4xl mb-6 sm:mb-8 flex items-center justify-between gap-3">
         <Logo />
@@ -178,7 +180,7 @@ export default function CreateClubPage() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 shadow-xl shadow-slate-200/30 dark:shadow-none transition-colors duration-200">
+      <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-8 md:p-10 shadow-xl shadow-slate-200/30 dark:shadow-none transition-colors duration-200">
         {/* Success Modal / Banner when Club is Created */}
         {createdClub ? (
           <div className="text-center py-6">
@@ -414,6 +416,7 @@ export default function CreateClubPage() {
           </div>
         )}
       </div>
+      <MobileBottomNav />
     </main>
   );
 }

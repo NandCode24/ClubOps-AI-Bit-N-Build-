@@ -4,17 +4,19 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ThemeToggle } from "../components/ThemeToggle";
+import MobileBottomNav from "../components/MobileBottomNav";
 
 function Logo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-2.5 sm:gap-3 group">
-      <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+    <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 min-w-0 group">
+      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
         <svg
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className="sm:w-5 sm:h-5"
         >
           <path
             d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
@@ -22,11 +24,11 @@ function Logo() {
           />
         </svg>
       </div>
-      <div>
-        <span className="text-[18px] sm:text-[20px] font-bold tracking-tight text-slate-900 dark:text-white">
+      <div className="min-w-0">
+        <span className="text-[15px] sm:text-[19px] font-bold tracking-tight text-slate-900 dark:text-white truncate block">
           ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
         </span>
-        <span className="block text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="hidden sm:block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
           Event Operations
         </span>
       </div>
@@ -125,7 +127,7 @@ export default function JoinClubPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-colors duration-200">
+    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 pt-4 pb-24 sm:px-6 sm:py-12 transition-colors duration-200">
       {/* Top Header */}
       <div className="mx-auto max-w-4xl mb-6 sm:mb-8 flex items-center justify-between gap-3">
         <Logo />
@@ -133,16 +135,16 @@ export default function JoinClubPage() {
           <ThemeToggle />
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition min-h-[38px]"
           >
             ← Dashboard
           </Link>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 shadow-xl shadow-slate-200/30 dark:shadow-none transition-colors duration-200">
+      <div className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-8 md:p-10 shadow-xl shadow-slate-200/30 dark:shadow-none transition-colors duration-200">
         {joinSuccess ? (
-          <div className="text-center py-6">
+          <div className="text-center py-4 sm:py-6">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800 text-4xl shadow-inner mb-6">
               ✉️
             </div>
@@ -152,14 +154,14 @@ export default function JoinClubPage() {
             <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400">
               Your request has been forwarded to <strong className="text-slate-900 dark:text-white">{club?.name}&apos;s</strong> leader (<span className="text-slate-800 dark:text-slate-200 font-medium">{club?.leader_name}</span>).
             </p>
-            <div className="mt-6 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700 p-4 text-xs text-slate-500 dark:text-slate-400">
+            <div className="mt-6 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700 p-4 text-xs text-slate-500 dark:text-slate-400 text-left sm:text-center">
               Once the leader approves your request, they will assign you an official role (e.g. Technical, Logistics, PR, etc.) and you will gain full access to the club&apos;s events and tasks.
             </div>
             <div className="mt-8 flex justify-center">
               <button
                 type="button"
                 onClick={() => router.push("/dashboard")}
-                className="rounded-xl bg-slate-900 dark:bg-white px-6 py-3 text-sm font-bold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition active:scale-95"
+                className="w-full sm:w-auto rounded-xl bg-slate-900 dark:bg-white px-6 py-3.5 text-sm font-bold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition active:scale-95 min-h-[48px]"
               >
                 Return to Dashboard
               </button>
@@ -193,19 +195,19 @@ export default function JoinClubPage() {
                 <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200 mb-1.5">
                   Enter Club Code
                 </label>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col sm:flex-row gap-2.5">
                   <input
                     type="text"
                     required
                     placeholder="e.g. CLB-9K2P4X"
                     value={clubCode}
                     onChange={(e) => setClubCode(e.target.value.toUpperCase())}
-                    className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 font-mono font-bold tracking-wider uppercase text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none transition"
+                    className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3.5 font-mono font-bold tracking-wider uppercase text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none transition min-h-[48px] text-base"
                   />
                   <button
                     type="submit"
                     disabled={lookingUp || !clubCode.trim()}
-                    className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-indigo-500/20 hover:bg-indigo-500 transition active:scale-95 disabled:opacity-50"
+                    className="w-full sm:w-auto rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 hover:bg-indigo-500 transition active:scale-95 disabled:opacity-50 min-h-[48px] flex items-center justify-center"
                   >
                     {lookingUp ? "Searching..." : "Lookup Club"}
                   </button>
@@ -218,7 +220,7 @@ export default function JoinClubPage() {
 
             {/* Found Club Preview & Join Submission Form */}
             {club && (
-              <div className="mt-6 sm:mt-8 rounded-2xl border border-indigo-100 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/30 p-5 sm:p-6">
+              <div className="mt-6 sm:mt-8 rounded-2xl border border-indigo-100 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/30 p-4 sm:p-6">
                 <div className="flex items-start gap-3.5 sm:gap-4">
                   <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-indigo-100 dark:border-indigo-800 text-2xl sm:text-3xl shadow-sm">
                     {club.profile_image || "🏛️"}
@@ -300,18 +302,18 @@ export default function JoinClubPage() {
                         Intro Note for Club Leader (Optional)
                       </label>
                       <textarea
-                        rows={2}
+                        rows={3}
                         placeholder="Tell the leader about your skills or which role you are interested in..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none text-base"
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3 text-sm font-bold text-white shadow-md shadow-indigo-500/20 hover:opacity-95 transition active:scale-[0.99] disabled:opacity-50"
+                      className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3.5 text-base font-bold text-white shadow-md shadow-indigo-500/20 hover:opacity-95 transition active:scale-[0.99] disabled:opacity-50 min-h-[48px]"
                     >
                       {submitting ? "Sending Request..." : "Request to Join Club →"}
                     </button>
@@ -322,6 +324,7 @@ export default function JoinClubPage() {
           </div>
         )}
       </div>
+      <MobileBottomNav />
     </main>
   );
 }

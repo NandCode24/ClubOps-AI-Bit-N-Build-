@@ -4,6 +4,7 @@ import { use, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/app/components/ThemeToggle";
+import MobileBottomNav from "@/app/components/MobileBottomNav";
 
 interface Participant {
   participant_id: string;
@@ -64,14 +65,15 @@ interface EventDetails {
 
 function Logo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20">
+    <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 min-w-0 group">
+      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
         <svg
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className="sm:w-5 sm:h-5"
         >
           <path
             d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
@@ -79,12 +81,12 @@ function Logo() {
           />
         </svg>
       </div>
-      <div>
-        <span className="text-[19px] font-bold tracking-tight text-slate-900 dark:text-white">
+      <div className="min-w-0">
+        <span className="text-[15px] sm:text-[19px] font-bold tracking-tight text-slate-900 dark:text-white truncate block">
           ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
         </span>
-        <span className="block text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          Live Event Space
+        <span className="hidden sm:block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
+          Event Operations
         </span>
       </div>
     </Link>
@@ -454,22 +456,22 @@ export default function EventDetailPage({
   return (
     <main className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-3.5 sm:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3.5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
           <Logo />
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <ThemeToggle />
             <Link
               href="/profile"
-              className="rounded-xl border border-indigo-200/70 dark:border-indigo-800/80 bg-indigo-50/70 dark:bg-indigo-950/50 px-3 sm:px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
+              className="hidden sm:inline-flex items-center rounded-xl border border-indigo-200/70 dark:border-indigo-800/80 bg-indigo-50/70 dark:bg-indigo-950/50 px-3 sm:px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
             >
               👤 <span className="hidden sm:inline">Profile &amp; Availability</span>
             </Link>
             <Link
               href={`/club/${clubCode}`}
-              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 sm:px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition truncate max-w-[130px] sm:max-w-none"
+              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
-              ← <span className="hidden sm:inline">{eventData.club_name}</span><span className="sm:hidden">Club</span>
+              ← <span className="hidden sm:inline">Back to </span>Club
             </Link>
             <Link
               href="/dashboard"
@@ -483,15 +485,15 @@ export default function EventDetailPage({
 
       {/* Floating Real-Time SSE Notification Toast */}
       {realtimeToast && (
-        <div className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm rounded-2xl border-2 border-emerald-400 dark:border-emerald-500 bg-white dark:bg-slate-900 p-4 shadow-2xl ring-4 ring-emerald-500/20 transition-all animate-bounce">
+        <div className="fixed top-16 sm:top-20 left-3 right-3 sm:left-auto sm:right-6 z-50 sm:max-w-sm rounded-2xl border-2 border-emerald-400 dark:border-emerald-500 bg-white dark:bg-slate-900 p-4 shadow-2xl ring-4 ring-emerald-500/20 transition-all animate-bounce">
           <div className="flex items-start gap-3">
-            <span className="text-2xl">⚡</span>
-            <div className="flex-1">
+            <span className="text-2xl shrink-0">⚡</span>
+            <div className="flex-1 min-w-0">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/70 px-2 py-0.5 rounded-md">
                 Live Real-Time Sync
               </span>
-              <h4 className="font-extrabold text-slate-900 dark:text-white text-sm mt-1">{realtimeToast.title}</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{realtimeToast.message}</p>
+              <h4 className="font-extrabold text-slate-900 dark:text-white text-sm mt-1 truncate">{realtimeToast.title}</h4>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 truncate">{realtimeToast.message}</p>
             </div>
             <button
               type="button"
@@ -504,7 +506,7 @@ export default function EventDetailPage({
         </div>
       )}
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-8 py-4 sm:py-8 pb-28 md:pb-8">
         {/* Dynamic Breadcrumbs */}
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-400 dark:text-slate-500">
           <Link href="/dashboard" className="hover:text-slate-600 dark:hover:text-slate-300 transition">
@@ -520,7 +522,7 @@ export default function EventDetailPage({
 
         {/* URGENT DEADLINE BANNER FOR VOLUNTEERS */}
         {urgentTasks.length > 0 && (
-          <div className="mb-6 rounded-3xl border-2 border-rose-400 dark:border-rose-700/80 bg-gradient-to-r from-rose-50 via-amber-50 to-orange-50 dark:from-rose-950/60 dark:via-amber-950/40 dark:to-orange-950/40 p-5 shadow-lg shadow-rose-500/10 ring-4 ring-rose-500/10">
+          <div className="mb-6 rounded-3xl border-2 border-rose-400 dark:border-rose-700/80 bg-gradient-to-r from-rose-50 via-amber-50 to-orange-50 dark:from-rose-950/60 dark:via-amber-950/40 dark:to-orange-950/40 p-4 sm:p-5 shadow-lg shadow-rose-500/10 ring-4 ring-rose-500/10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-start gap-3.5">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-600 text-white text-xl animate-pulse shadow-md">
@@ -548,17 +550,17 @@ export default function EventDetailPage({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                 {notificationPerm !== "granted" ? (
                   <button
                     type="button"
                     onClick={requestNotificationPermission}
-                    className="rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 px-3.5 py-2 text-xs font-bold text-rose-700 dark:text-rose-300 shadow-2xs hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
+                    className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 px-4 py-2.5 text-xs font-bold text-rose-700 dark:text-rose-300 shadow-2xs hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
                   >
                     🔔 Enable Push Alerts
                   </button>
                 ) : (
-                  <span className="rounded-xl bg-white/80 dark:bg-slate-900/80 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  <span className="min-h-[44px] flex items-center justify-center rounded-xl bg-white/80 dark:bg-slate-900/80 border border-emerald-200 dark:border-emerald-800 px-4 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                     ✓ Alerts Enabled
                   </span>
                 )}
@@ -566,7 +568,7 @@ export default function EventDetailPage({
                   type="button"
                   onClick={() => handleToggleTask(urgentTasks[0])}
                   disabled={togglingTaskId === urgentTasks[0].id}
-                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-500 active:scale-95 transition disabled:opacity-50"
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-rose-500 active:scale-95 transition disabled:opacity-50"
                 >
                   {togglingTaskId === urgentTasks[0].id ? "Saving..." : "✓ Mark as Completed"}
                 </button>
@@ -576,12 +578,12 @@ export default function EventDetailPage({
         )}
 
         {/* HERO EVENT CARD */}
-        <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] mb-8">
+        <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-[0_8px_30px_rgba(15,23,42,0.03)] mb-6 sm:mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-3xl">
-              <div className="flex flex-wrap items-center gap-2.5">
+            <div className="space-y-2 max-w-3xl min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wider ${
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider ${
                     eventData.mode === "online"
                       ? "bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300"
                       : eventData.mode === "hybrid"
@@ -597,7 +599,7 @@ export default function EventDetailPage({
                 </span>
 
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                     eventData.is_leader
                       ? "bg-indigo-100 dark:bg-indigo-950/70 text-indigo-800 dark:text-indigo-300"
                       : "bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300"
@@ -611,12 +613,12 @@ export default function EventDetailPage({
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white break-words">
                 {eventData.name}
               </h1>
 
               {eventData.description && (
-                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
                   {eventData.description}
                 </p>
               )}
@@ -647,7 +649,7 @@ export default function EventDetailPage({
             </div>
 
             {/* Quick Metrics Badge */}
-            <div className="rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/80 dark:from-indigo-950/40 dark:via-slate-900 dark:to-violet-950/40 border border-indigo-100 dark:border-indigo-900/60 p-5 text-center min-w-[240px] shadow-xs">
+            <div className="rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/80 dark:from-indigo-950/40 dark:via-slate-900 dark:to-violet-950/40 border border-indigo-100 dark:border-indigo-900/60 p-4 sm:p-5 text-center w-full lg:w-auto lg:min-w-[240px] shadow-xs">
               <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 block mb-1">
                 Real-Time Task Progress
               </span>
@@ -686,14 +688,14 @@ export default function EventDetailPage({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(eventData.meeting_link!);
                     alert("Meeting link copied to clipboard!");
                   }}
-                  className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition"
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition"
                 >
                   Copy Link
                 </button>
@@ -701,7 +703,7 @@ export default function EventDetailPage({
                   href={eventData.meeting_link}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition"
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition"
                 >
                   Join Meeting Now →
                 </a>
@@ -711,7 +713,7 @@ export default function EventDetailPage({
         </div>
 
         {/* SECTION 1: MY ASSIGNED TASKS (FOR VOLUNTEER & LEADER) */}
-        <div className="mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-xs">
+        <div className="mb-6 sm:mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-6">
             <div>
               <div className="flex items-center gap-2">
@@ -754,12 +756,12 @@ export default function EventDetailPage({
                         : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs"
                     }`}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3.5">
                       <button
                         type="button"
                         disabled={isToggling}
                         onClick={() => handleToggleTask(task)}
-                        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border-2 transition active:scale-90 ${
+                        className={`flex h-10 w-10 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl border-2 transition active:scale-90 ${
                           isDone
                             ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
                             : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-500 dark:hover:border-indigo-400 text-transparent"
@@ -769,7 +771,7 @@ export default function EventDetailPage({
                         {isDone ? "✓" : ""}
                       </button>
 
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3
                             className={`font-bold text-sm sm:text-base transition ${
@@ -794,7 +796,7 @@ export default function EventDetailPage({
                         )}
 
                         {task.deadline && (
-                          <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                             <span>⏰ Deadline:</span>
                             <span
                               className={`font-semibold ${
@@ -816,7 +818,7 @@ export default function EventDetailPage({
                       type="button"
                       disabled={isToggling}
                       onClick={() => handleToggleTask(task)}
-                      className={`self-start sm:self-center shrink-0 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                      className={`w-full sm:w-auto min-h-[44px] flex items-center justify-center shrink-0 rounded-xl px-4 py-2 text-xs font-bold transition ${
                         isDone
                           ? "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                           : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-xs active:scale-95"
@@ -833,7 +835,7 @@ export default function EventDetailPage({
 
         {/* SECTION 2: ALL EVENT TASKS (VISIBLE ONLY TO CLUB LEADER FOR VOLUNTEER PRIVACY) */}
         {eventData.is_leader && (
-          <div className="mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-xs">
+          <div className="mb-6 sm:mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-6">
               <div>
                 <div className="flex items-center gap-2">
@@ -852,7 +854,7 @@ export default function EventDetailPage({
               <button
                 type="button"
                 onClick={() => setShowAddTaskModal(true)}
-                className="self-start sm:self-auto rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:from-indigo-500 hover:to-violet-500 active:scale-95 transition"
+                className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:from-indigo-500 hover:to-violet-500 active:scale-95 transition"
               >
                 + Assign New Task
               </button>
@@ -957,7 +959,7 @@ export default function EventDetailPage({
         )}
 
         {/* SECTION 3: PARTICIPATING MEMBERS ROSTER */}
-        <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8 shadow-xs">
+        <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs">
           <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-6">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold text-xs">
               👥
@@ -1030,8 +1032,8 @@ export default function EventDetailPage({
 
       {/* LEADER ADD TASK MODAL */}
       {showAddTaskModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/70 p-4 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/70 p-3 sm:p-4 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 md:p-8 shadow-2xl space-y-4 sm:space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Assign New Task</h3>
@@ -1123,14 +1125,14 @@ export default function EventDetailPage({
                 <button
                   type="button"
                   onClick={() => setShowAddTaskModal(false)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addTaskLoading}
-                  className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition disabled:opacity-50"
+                  className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition disabled:opacity-50 min-h-[44px]"
                 >
                   {addTaskLoading ? "Assigning..." : "Assign Task"}
                 </button>
@@ -1139,6 +1141,9 @@ export default function EventDetailPage({
           </div>
         </div>
       )}
+
+      {/* Persistent Mobile Bottom Navigation Bar */}
+      <MobileBottomNav clubCode={clubCode} />
     </main>
   );
 }
