@@ -7,7 +7,7 @@ export function proxy(request: NextRequest) {
   const neonSession = request.cookies.get("neon_auth.session_token")?.value;
   const isAuthenticated = Boolean(sessionCookie || neonSession);
 
-  const protectedPaths = ["/dashboard", "/club", "/createClub", "/joinClub"];
+  const protectedPaths = ["/dashboard", "/club", "/createClub", "/joinClub", "/profile"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
 
   const authPaths = ["/signin", "/signup"];
@@ -34,6 +34,7 @@ export const config = {
     "/club/:path*",
     "/createClub/:path*",
     "/joinClub/:path*",
+    "/profile/:path*",
     "/signin",
     "/signup",
   ],

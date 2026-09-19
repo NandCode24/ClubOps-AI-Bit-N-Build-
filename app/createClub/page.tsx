@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "../components/ThemeToggle";
 import MobileBottomNav from "../components/MobileBottomNav";
+import UniversalLoader from "../components/UniversalLoader";
 
 const PRESET_ROLES = [
   "Technical Lead",
@@ -143,7 +144,18 @@ export default function CreateClubPage() {
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = null;
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.ok
+            ? "Server returned an unexpected response format."
+            : `Create club failed (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
 
       if (!res.ok) {
         throw new Error(data.message || "Failed to create club.");
@@ -165,7 +177,22 @@ export default function CreateClubPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-3 py-4 sm:px-6 sm:py-12 pb-24 md:pb-8 transition-colors duration-200">
+    <>
+      {loading && (
+        <UniversalLoader
+          fullscreen
+          blur
+          badge="Club Generation"
+          text="Generating Club Workspace..."
+          subtext="Setting up your official club code, role templates, and member spaces..."
+        />
+      )}
+
+      <main
+        className={`min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-3 py-4 sm:px-6 sm:py-12 pb-24 md:pb-8 transition-all duration-300 ${
+          loading ? "filter blur-sm pointer-events-none select-none" : ""
+        }`}
+      >
       {/* Top Header */}
       <div className="mx-auto max-w-4xl mb-6 sm:mb-8 flex items-center justify-between gap-3">
         <Logo />
@@ -418,5 +445,6 @@ export default function CreateClubPage() {
       </div>
       <MobileBottomNav />
     </main>
+    </>
   );
 }

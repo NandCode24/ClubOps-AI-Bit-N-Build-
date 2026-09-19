@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "../components/ThemeToggle";
 import MobileBottomNav from "../components/MobileBottomNav";
+import UniversalLoader from "../components/UniversalLoader";
 
 interface Member {
   membership_id: string;
@@ -117,6 +118,7 @@ export default function DashboardPage() {
   } | null>(null);
 
   const [clubEventsList, setClubEventsList] = useState<any[]>([]);
+  const [clubTasksList, setClubTasksList] = useState<any[]>([]);
 
   function playNotificationChime() {
     try {
@@ -176,8 +178,9 @@ export default function DashboardPage() {
           const evRes = await fetch(`/api/clubs/${data.activeClub.id}/events-list`);
           if (evRes.ok) {
             const evData = await evRes.json();
-            if (evData.success && Array.isArray(evData.events)) {
-              setClubEventsList(evData.events);
+            if (evData.success) {
+              if (Array.isArray(evData.events)) setClubEventsList(evData.events);
+              if (Array.isArray(evData.tasks)) setClubTasksList(evData.tasks);
             }
           }
         } catch {
@@ -346,17 +349,31 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-          <p className="text-sm font-medium text-slate-500">Loading your club space...</p>
-        </div>
-      </main>
+      <UniversalLoader
+        badge="ClubOps AI Dashboard"
+        text="Loading your club space..."
+        subtext="Syncing memberships, live event schedules, and role assignments..."
+      />
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] transition-colors duration-200">
+    <>
+      {actionLoading && (
+        <UniversalLoader
+          fullscreen
+          blur
+          badge="Club Operations"
+          text="Processing Request..."
+          subtext="Updating volunteer membership and assigning role permissions..."
+        />
+      )}
+
+      <main
+        className={`min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] transition-all duration-200 ${
+          actionLoading ? "filter blur-sm pointer-events-none select-none" : ""
+        }`}
+      >
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3 transition-colors duration-200">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
@@ -515,48 +532,137 @@ export default function DashboardPage() {
         ) : (
           /* Active Club Management View */
           <div>
-            {/* Top Club Header & Switcher */}
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-              {/* Club selector if user is in multiple clubs */}
-              {clubs.length > 1 ? (
-                <div className="flex items-center gap-2 max-w-full min-w-0">
-                  <label htmlFor="club-select" className="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
-                    Active Club:
-                  </label>
-                  <select
-                    id="club-select"
-                    value={activeClub.id}
-                    onChange={(e) => loadDashboard(e.target.value)}
-                    className="flex-1 sm:flex-initial max-w-[220px] sm:max-w-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none truncate"
-                  >
-                    {clubs.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} {c.is_leader ? "(Leader)" : `(${c.assigned_role || "Member"})`}
-                      </option>
-                    ))}
-                  </select>
+            {/* SECTION: ALL USER CLUBS & WORKSPACES */}
+            <div className="mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 p-4 sm:p-6 backdrop-blur-md shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-slate-100 dark:border-slate-800/80 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold text-xs">
+                      🏛️
+                    </span>
+                    <h2 className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
+                      Your Clubs & Workspaces
+                    </h2>
+                    <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {clubs.length}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Select a club to switch your active workspace, volunteer requests, events, and operations.
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-                    {activeClub.is_leader ? "👑 You are Club Leader" : `🤝 Role: ${activeClub.assigned_role || "Volunteer"}`}
-                  </span>
-                </div>
-              )}
 
-              <div className="flex items-center gap-2 shrink-0">
-                <Link
-                  href="/createClub"
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition"
-                >
-                  + New Club
-                </Link>
-                <Link
-                  href="/joinClub"
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition"
-                >
-                  + Join Another
-                </Link>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    href="/createClub"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition shadow-2xs"
+                  >
+                    <span>+</span> Create Club
+                  </Link>
+                  <Link
+                    href="/joinClub"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-800/60 px-3.5 py-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition"
+                  >
+                    <span>🔗</span> Join Club
+                  </Link>
+                </div>
+              </div>
+
+              {/* Grid of All Clubs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {clubs.map((c) => {
+                  const isActive = c.id === activeClub.id;
+
+                  return (
+                    <div
+                      key={c.id}
+                      className={`relative rounded-2xl p-4 sm:p-5 transition-all duration-200 flex flex-col justify-between ${
+                        isActive
+                          ? "border-2 border-indigo-600 dark:border-indigo-500 bg-gradient-to-b from-indigo-50/60 via-white to-white dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-900 shadow-md shadow-indigo-500/10 ring-2 ring-indigo-500/20"
+                          : "border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs hover:shadow-sm"
+                      }`}
+                    >
+                      <div>
+                        {/* Top Meta Row */}
+                        <div className="flex items-start justify-between gap-2.5 mb-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-2xl shadow-xs">
+                              {c.profile_image || "🏛️"}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base truncate" title={c.name}>
+                                {c.name}
+                              </h3>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="font-mono text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100/70 dark:bg-indigo-900/50 px-2 py-0.5 rounded">
+                                  {c.club_code}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyClubCode(c.club_code);
+                                  }}
+                                  title="Copy club code"
+                                  className="text-[11px] text-slate-400 hover:text-indigo-600 transition"
+                                >
+                                  📋
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Role Badge */}
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              c.is_leader
+                                ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xs"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            {c.is_leader ? "👑 Leader" : `🤝 ${c.assigned_role || "Volunteer"}`}
+                          </span>
+                        </div>
+
+                        {/* Location & Details */}
+                        <div className="text-xs text-slate-500 dark:text-slate-400 space-y-0.5 my-2.5">
+                          <p className="truncate">
+                            Lead: <strong className="text-slate-700 dark:text-slate-300">{c.leader_name}</strong>
+                          </p>
+                          <p className="truncate">
+                            Location: {c.location || "Campus"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Card Bottom Actions */}
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2 mt-2">
+                        {isActive ? (
+                          <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 text-white py-2 text-xs font-bold shadow-xs">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                            Active Workspace
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => loadDashboard(c.id)}
+                            className="flex-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-slate-800 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 py-2 text-xs font-bold transition min-h-[34px]"
+                          >
+                            Switch Workspace
+                          </button>
+                        )}
+
+                        <Link
+                          href={`/club/${c.club_code}`}
+                          className="rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-white transition min-h-[34px] flex items-center"
+                          title="Open dynamic club workspace"
+                        >
+                          Workspace →
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -1021,5 +1127,6 @@ export default function DashboardPage() {
       {/* Persistent Mobile Bottom Navigation Bar */}
       <MobileBottomNav clubCode={activeClub?.club_code} />
     </main>
+    </>
   );
 }

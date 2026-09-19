@@ -166,7 +166,7 @@ export async function GET(
         is_member: Boolean(membership),
         user_role: membership?.assigned_role || (isLeader ? "Leader" : null),
         member_count: members.length,
-        members,
+        members: isLeader ? members : [],
         roles,
         pendingRequests,
       },

@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
       activeClub: {
         ...activeClubMeta,
         member_count: members.length,
-        members,
+        members: isLeader ? members : [],
         roles,
         pendingRequests,
       },

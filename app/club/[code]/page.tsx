@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/app/components/ThemeToggle";
 import MobileBottomNav from "@/app/components/MobileBottomNav";
+import UniversalLoader from "@/app/components/UniversalLoader";
 
 interface Member {
   membership_id: string;
@@ -345,12 +346,11 @@ export default function ClubDynamicPage({
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-          <p className="text-sm font-medium text-slate-500">Loading dynamic club workspace...</p>
-        </div>
-      </main>
+      <UniversalLoader
+        badge="ClubOps AI Workspace"
+        text="Loading dynamic club workspace..."
+        subtext="Retrieving event operations, volunteer rosters, and team schedule..."
+      />
     );
   }
 

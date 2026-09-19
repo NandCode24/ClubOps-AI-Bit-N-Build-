@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signInWithGoogle } from "../lib/auth";
 import { ThemeToggle } from "../components/ThemeToggle";
+import UniversalLoader from "../components/UniversalLoader";
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -156,7 +157,18 @@ export default function SignUpPage() {
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      let data: any = null;
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(
+          response.ok
+            ? "Server returned an unexpected response format."
+            : `Signup failed (${response.status}): ${text.slice(0, 100)}`
+        );
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Unable to create account.");
@@ -186,7 +198,18 @@ export default function SignUpPage() {
         body: JSON.stringify({ idToken }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = null;
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.ok
+            ? "Server returned an unexpected response format."
+            : `Google sign-up failed (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
 
       if (!res.ok) {
         throw new Error(data.message || "Google sign-up exchange failed.");
@@ -201,8 +224,29 @@ export default function SignUpPage() {
     }
   }
 
+  const isAuthenticating = loading || googleLoading;
+
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-colors duration-200">
+    <>
+      {isAuthenticating && (
+        <UniversalLoader
+          fullscreen
+          blur
+          badge={googleLoading ? "Google Account Setup" : "Account Creation"}
+          text={googleLoading ? "Connecting with Google..." : "Creating Your Account..."}
+          subtext={
+            googleLoading
+              ? "Initializing your profile and setting up secure workspace access..."
+              : "Creating your student leader profile and configuring your account..."
+          }
+        />
+      )}
+
+      <main
+        className={`min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-all duration-300 ${
+          isAuthenticating ? "filter blur-md pointer-events-none select-none" : ""
+        }`}
+      >
       {/* Top Floating Controls */}
       <div className="mx-auto flex max-w-[620px] items-center justify-between mb-4">
         <Link
@@ -394,5 +438,6 @@ export default function SignUpPage() {
         .
       </p>
     </main>
+    </>
   );
 }

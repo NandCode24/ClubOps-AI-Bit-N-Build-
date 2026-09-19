@@ -65,9 +65,37 @@ export async function GET(
       ORDER BY e.start_time ASC
     `;
 
+    // Fetch all tasks for events in this club so volunteers can see all tasks across events
+    const allClubTasks = await sql`
+      SELECT 
+        t.id,
+        t.club_id,
+        t.event_id,
+        t.name,
+        t.description,
+        t.assigned_to,
+        t.deadline,
+        t.status,
+        t.completed_at,
+        t.created_at,
+        e.name as event_name,
+        u.full_name as assigned_to_name,
+        u.email as assigned_to_email,
+        u.photo_url as assigned_to_photo
+      FROM tasks t
+      JOIN events e ON e.id = t.event_id
+      LEFT JOIN users u ON u.id = t.assigned_to
+      WHERE e.club_id = ${clubId}
+      ORDER BY 
+        CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END,
+        t.deadline ASC NULLS LAST,
+        t.created_at ASC
+    `;
+
     return NextResponse.json({
       success: true,
       events,
+      tasks: allClubTasks,
     });
   } catch (error) {
     console.error("Error in GET /api/clubs/[id]/events-list:", error);

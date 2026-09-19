@@ -1,27 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthUser, sql } from "../../../lib/db";
-import { emitNewJoinRequest } from "../../../lib/events";
+import { getAuthUser, sql } from "../../../../lib/db";
+import { emitNewJoinRequest } from "../../../../lib/events";
 
 export const runtime = "nodejs";
 
-export async function POST(request: NextRequest) {
+// POST /api/clubs/[id]/join - Submit a volunteer join request to a specific club
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const user = await getAuthUser();
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized. Please sign in." },
+        { success: false, message: "Unauthorized. Please sign in to request joining a club." },
         { status: 401 }
       );
     }
 
-    let body: { club_id?: string; message?: string } = {};
+    const { id: clubIdParam } = await context.params;
+    let body: { message?: string; club_id?: string } = {};
     try {
       body = await request.json();
     } catch {
       body = {};
     }
-    const clubId = String(body.club_id || "").trim();
+
+    const clubId = String(clubIdParam || body.club_id || "").trim();
     const message = String(body.message || "").trim();
 
     if (!clubId) {
@@ -38,21 +44,21 @@ export async function POST(request: NextRequest) {
 
     if (clubRows.length === 0) {
       return NextResponse.json(
-        { success: false, message: "Club not found." },
+        { success: false, message: "Club not found. Please verify the club code." },
         { status: 404 }
       );
     }
 
     const club = clubRows[0];
 
-    // Check if already a member
+    // Check if user is already a member
     const existingMember = await sql`
       SELECT id FROM club_members WHERE club_id = ${club.id} AND user_id = ${user.id} LIMIT 1
     `;
 
     if (existingMember.length > 0) {
       return NextResponse.json(
-        { success: false, message: "You are already a member of this club." },
+        { success: false, message: "You are already an active member of this club." },
         { status: 400 }
       );
     }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/app/components/ThemeToggle";
 import MobileBottomNav from "@/app/components/MobileBottomNav";
+import UniversalLoader from "@/app/components/UniversalLoader";
 
 interface Participant {
   participant_id: string;
@@ -36,6 +37,19 @@ interface TaskItem {
   assigned_to_email: string | null;
   assigned_to_photo: string | null;
   assigned_to_skills: string[] | null;
+}
+
+interface AnnouncementItem {
+  id: string;
+  club_id: string;
+  event_id: string;
+  title: string;
+  content: string;
+  audio_url: string | null;
+  created_by: string;
+  created_at: string;
+  author_name: string | null;
+  author_photo: string | null;
 }
 
 interface EventDetails {
@@ -128,6 +142,67 @@ export default function EventDetailPage({
   // Toggling Task Loading Map
   const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null);
 
+  // Event Announcements
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementContent, setAnnouncementContent] = useState("");
+  const [postingAnnouncement, setPostingAnnouncement] = useState(false);
+  const [announcementError, setAnnouncementError] = useState("");
+  const [announcementSuccess, setAnnouncementSuccess] = useState("");
+
+  async function loadAnnouncements() {
+    try {
+      setAnnouncementsLoading(true);
+      const res = await fetch(`/api/events/${eventId}/announcements`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.announcements)) {
+          setAnnouncements(data.announcements);
+        }
+      }
+    } catch (e) {
+      console.error("Error loading announcements:", e);
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  }
+
+  async function handlePostAnnouncement(e: React.FormEvent) {
+    e.preventDefault();
+    if (!announcementContent.trim()) return;
+
+    try {
+      setPostingAnnouncement(true);
+      setAnnouncementError("");
+      setAnnouncementSuccess("");
+
+      const res = await fetch(`/api/events/${eventId}/announcements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: announcementTitle.trim() || "Leader Announcement",
+          content: announcementContent.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to post announcement.");
+      }
+
+      setAnnouncements((prev) => [data.announcement, ...prev]);
+      setAnnouncementTitle("");
+      setAnnouncementContent("");
+      setAnnouncementSuccess("Announcement broadcasted successfully to all joined members!");
+      setTimeout(() => setAnnouncementSuccess(""), 4000);
+    } catch (err) {
+      setAnnouncementError(err instanceof Error ? err.message : "Failed to post announcement.");
+    } finally {
+      setPostingAnnouncement(false);
+    }
+  }
+
   function playSuccessChime() {
     try {
       const AudioCtx =
@@ -178,6 +253,7 @@ export default function EventDetailPage({
   useEffect(() => {
     if (eventId) {
       loadEvent();
+      loadAnnouncements();
     }
     if (typeof window !== "undefined" && "Notification" in window) {
       setNotificationPerm(Notification.permission);
@@ -406,12 +482,11 @@ export default function EventDetailPage({
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Loading live event workspace...</p>
-        </div>
-      </main>
+      <UniversalLoader
+        badge="Live Event Operations"
+        text="Loading live event workspace..."
+        subtext="Syncing event tasks, volunteer assignments, and real-time status board..."
+      />
     );
   }
 
@@ -708,6 +783,170 @@ export default function EventDetailPage({
                   Join Meeting Now →
                 </a>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* EVENT ANNOUNCEMENTS SECTION (LEADER BROADCASTS & MEMBER FEED) */}
+        <div className="mb-6 sm:mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-bold text-sm shadow-sm shadow-indigo-500/20">
+                  📢
+                </span>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  Event Announcements ({announcements.length})
+                </h2>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Official briefings and live broadcasts from the Club Leader to all volunteers joined for this event.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {eventData.is_leader ? (
+                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-full border border-indigo-200/70 dark:border-indigo-800/70">
+                  👑 Leader Broadcast Mode
+                </span>
+              ) : (
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+                  Joined Member View
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* LEADER ONLY: BROADCAST COMPOSER FORM */}
+          {eventData.is_leader && (
+            <div className="rounded-2xl border border-indigo-200/80 dark:border-indigo-800/70 bg-indigo-50/30 dark:bg-indigo-950/20 p-4 sm:p-6 mb-6">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                  Post New Announcement to Joined Members
+                </span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                  Visible to all volunteers
+                </span>
+              </div>
+
+              {announcementError && (
+                <div className="mb-3 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-400">
+                  {announcementError}
+                </div>
+              )}
+
+              {announcementSuccess && (
+                <div className="mb-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs text-emerald-700 dark:text-emerald-300">
+                  ✓ {announcementSuccess}
+                </div>
+              )}
+
+              <form onSubmit={handlePostAnnouncement} className="space-y-3">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Announcement Title (e.g. Schedule Update, Stage Briefing)"
+                    value={announcementTitle}
+                    onChange={(e) => setAnnouncementTitle(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <textarea
+                    rows={3}
+                    required
+                    placeholder="Write your announcement message for all joined members and volunteers..."
+                    value={announcementContent}
+                    onChange={(e) => setAnnouncementContent(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={postingAnnouncement || !announcementContent.trim()}
+                    className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-indigo-500/20 hover:opacity-95 transition active:scale-98 disabled:opacity-50 min-h-[40px] flex items-center gap-2"
+                  >
+                    {postingAnnouncement ? (
+                      <>
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>Broadcasting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>📢 Broadcast Announcement</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ANNOUNCEMENTS LIST / FEED */}
+          {announcementsLoading ? (
+            <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500 flex flex-col items-center gap-2">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+              <span>Loading announcements...</span>
+            </div>
+          ) : announcements.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 py-10 px-4 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800/80 text-2xl mb-3">
+                📭
+              </div>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                No Announcements Posted Yet
+              </h4>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                {eventData.is_leader
+                  ? "Use the composer above to share instructions, schedule updates, or urgent briefs with joined members."
+                  : "The Club Leader has not posted any announcements for this event yet. Check back soon for live updates."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {announcements.map((a) => (
+                <div
+                  key={a.id}
+                  className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 sm:p-5 hover:border-indigo-200 dark:hover:border-indigo-800 transition shadow-2xs"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700/60 pb-2.5 mb-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-bold text-xs shadow-xs">
+                        {a.author_name ? a.author_name.charAt(0) : "L"}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                            {a.author_name || eventData.leader_name}
+                          </span>
+                          <span className="rounded-md bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.2 text-[10px] font-bold text-indigo-800 dark:text-indigo-300">
+                            👑 Club Leader
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                      {new Date(a.created_at).toLocaleString([], {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    {a.title}
+                  </h3>
+                  <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                    {a.content}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
         </div>

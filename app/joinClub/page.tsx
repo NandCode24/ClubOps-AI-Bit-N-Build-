@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ThemeToggle } from "../components/ThemeToggle";
 import MobileBottomNav from "../components/MobileBottomNav";
+import UniversalLoader from "../components/UniversalLoader";
 
 function Logo() {
   return (
@@ -83,10 +84,21 @@ export default function JoinClubPage() {
         body: JSON.stringify({ code: cleanCode }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = null;
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.ok
+            ? "Server returned an unexpected response format."
+            : `Lookup failed (${res.status}): ${text.slice(0, 120)}`
+        );
+      }
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Club not found. Check the code and try again.");
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "Club not found. Check the code and try again.");
       }
 
       setClub(data.club);
@@ -109,13 +121,27 @@ export default function JoinClubPage() {
       const res = await fetch(`/api/clubs/${club.id}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: message.trim() }),
+        body: JSON.stringify({
+          club_id: club.id,
+          message: message.trim(),
+        }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = null;
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.ok
+            ? "Server returned an unexpected response format."
+            : `Request failed (${res.status}): ${text.slice(0, 120)}`
+        );
+      }
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to send join request.");
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to send join request.");
       }
 
       setJoinSuccess(true);
@@ -127,7 +153,22 @@ export default function JoinClubPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 pt-4 pb-24 sm:px-6 sm:py-12 transition-colors duration-200">
+    <>
+      {submitting && (
+        <UniversalLoader
+          fullscreen
+          blur
+          badge="ClubOps AI Volunteer"
+          text="Submitting Join Request..."
+          subtext={`Notifying ${club?.name ? club.name : "club"} leadership and registering your volunteer application...`}
+        />
+      )}
+
+      <main
+        className={`min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 pt-4 pb-24 sm:px-6 sm:py-12 transition-all duration-300 ${
+          submitting ? "filter blur-sm pointer-events-none select-none" : ""
+        }`}
+      >
       {/* Top Header */}
       <div className="mx-auto max-w-4xl mb-6 sm:mb-8 flex items-center justify-between gap-3">
         <Logo />
@@ -326,5 +367,6 @@ export default function JoinClubPage() {
       </div>
       <MobileBottomNav />
     </main>
+    </>
   );
 }

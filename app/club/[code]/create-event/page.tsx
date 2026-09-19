@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/app/components/ThemeToggle";
 import MobileBottomNav from "@/app/components/MobileBottomNav";
+import UniversalLoader from "@/app/components/UniversalLoader";
 
 interface Member {
   membership_id: string;
@@ -281,12 +282,11 @@ export default function CreateEventPage({
 
   if (loadingClub) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Loading club details...</p>
-        </div>
-      </main>
+      <UniversalLoader
+        badge="Event Creator"
+        text="Loading club details..."
+        subtext="Preparing volunteer roles, templates, and setup checklist..."
+      />
     );
   }
 

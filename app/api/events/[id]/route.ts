@@ -98,6 +98,22 @@ export async function GET(
 
     const isParticipant = participants.some((p) => p.user_id === user.id);
 
+    // Security Check: Only the club leader, event participants, or club members can view this event
+    let isClubMember = isLeader;
+    if (!isClubMember) {
+      const memberRows = await sql`
+        SELECT id FROM club_members WHERE club_id = ${event.club_id} AND user_id = ${user.id} LIMIT 1
+      `;
+      isClubMember = memberRows.length > 0;
+    }
+
+    if (!isLeader && !isParticipant && !isClubMember) {
+      return NextResponse.json(
+        { success: false, message: "Access denied. You are not a member of this club or event." },
+        { status: 403 }
+      );
+    }
+
     // Fetch tasks
     const tasks = await sql`
       SELECT 
@@ -126,10 +142,8 @@ export async function GET(
 
     const userTasks = tasks.filter((t: Record<string, any>) => t.assigned_to === user.id);
 
-    // VOLUNTEER PRIVACY:
-    // Only the Club Leader can view all tasks across the entire event.
-    // Volunteers strictly receive only their own assigned tasks!
-    const visibleTasks = isLeader ? tasks : userTasks;
+    // Event tasks visibility: volunteers and leaders can view all event tasks
+    const visibleTasks = tasks;
 
     return NextResponse.json({
       success: true,

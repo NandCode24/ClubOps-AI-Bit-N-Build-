@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signInWithGoogle } from "../lib/auth";
 import { ThemeToggle } from "../components/ThemeToggle";
+import UniversalLoader from "../components/UniversalLoader";
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -147,7 +148,18 @@ export default function SignInPage() {
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      let data: any = null;
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(
+          response.ok
+            ? "Server returned an unexpected response format."
+            : `Sign in failed (${response.status}): ${text.slice(0, 100)}`
+        );
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Unable to sign in.");
@@ -175,7 +187,18 @@ export default function SignInPage() {
         body: JSON.stringify({ idToken }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = null;
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.ok
+            ? "Server returned an unexpected response format."
+            : `Google sign-in failed (${res.status}): ${text.slice(0, 100)}`
+        );
+      }
 
       if (!res.ok) {
         throw new Error(data.message || "Google sign-in exchange failed.");
@@ -190,8 +213,29 @@ export default function SignInPage() {
     }
   }
 
+  const isAuthenticating = loading || googleLoading;
+
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-colors duration-200">
+    <>
+      {isAuthenticating && (
+        <UniversalLoader
+          fullscreen
+          blur
+          badge={googleLoading ? "Google Authentication" : "Secure Authentication"}
+          text={googleLoading ? "Connecting with Google..." : "Signing in..."}
+          subtext={
+            googleLoading
+              ? "Authenticating your Google account and verifying secure access..."
+              : "Verifying your credentials and preparing your dashboard..."
+          }
+        />
+      )}
+
+      <main
+        className={`min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-all duration-300 ${
+          isAuthenticating ? "filter blur-md pointer-events-none select-none" : ""
+        }`}
+      >
       {/* Top Floating Controls */}
       <div className="mx-auto flex max-w-[620px] items-center justify-between mb-4">
         <Link
@@ -339,5 +383,6 @@ export default function SignInPage() {
         .
       </p>
     </main>
+    </>
   );
 }
