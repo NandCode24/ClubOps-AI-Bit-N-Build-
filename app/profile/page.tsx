@@ -206,9 +206,13 @@ export default function ProfilePage() {
       }
 
       setUser(data.user);
+      let successMsg = `You are now marked as Away until ${new Date(data.user.unavailable_until).toLocaleString()}. You will not receive new tasks.`;
+      if (Array.isArray(data.reassigned_tasks) && data.reassigned_tasks.length > 0) {
+        successMsg += ` ${data.reassigned_tasks.length} active task(s) were automatically reassigned to peers with matching skillsets.`;
+      }
       setMessage({
         type: "success",
-        text: `You are now marked as Away until ${new Date(data.user.unavailable_until).toLocaleString()}. You will not receive new tasks.`,
+        text: successMsg,
       });
     } catch (err) {
       setMessage({

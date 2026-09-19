@@ -34,7 +34,7 @@ export function emitNewJoinRequest(clubId: string, payload: RealtimeJoinRequestE
 }
 
 export interface RealtimeTaskEvent {
-  action: "created" | "updated" | "status_change";
+  action: "created" | "updated" | "status_change" | "reallocated";
   task_id: string;
   club_id: string;
   event_id: string;
@@ -42,7 +42,8 @@ export interface RealtimeTaskEvent {
   status: string;
   assigned_to: string | null;
   assigned_to_name?: string | null;
-  deadline: string | null;
+  previous_assignee_name?: string | null;
+  deadline?: string | null;
   updated_at: string;
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, sql } from "../../../../lib/db";
 import { emitTaskEvent } from "../../../../lib/events";
+import { evaluateTaskAssignmentWithGroq } from "../../../../lib/groq";
 
 export const runtime = "nodejs";
 
@@ -44,7 +45,16 @@ export async function POST(
       return NextResponse.json({ success: false, message: "Task name is required." }, { status: 400 });
     }
 
+    if (!assigned_to || !String(assigned_to).trim()) {
+      return NextResponse.json(
+        { success: false, message: "Whom to inform / Assignee is compulsory. You must designate an active volunteer to assign and notify." },
+        { status: 400 }
+      );
+    }
+
     // Availability & Workload check:
+    let aiAdvisory: string | null = null;
+
     if (assigned_to) {
       // 1. Availability check
       const userRows = await sql`
@@ -74,24 +84,69 @@ export async function POST(
         }
       }
 
-      // 2. Workload check: 1 volunteer can hold only 1 active task at a time!
+      // 2. Groq AI Workload check: Prevent assigning 2 tasks at a single time to a single volunteer!
       const activeTasks = await sql`
-        SELECT id, name FROM tasks 
-        WHERE assigned_to = ${assigned_to} 
-          AND club_id = ${event.club_id} 
-          AND status != 'completed' 
-        LIMIT 1
+        SELECT 
+          t.id, 
+          t.name, 
+          t.status, 
+          t.deadline, 
+          e.name as event_name
+        FROM tasks t
+        LEFT JOIN events e ON e.id = t.event_id
+        WHERE t.assigned_to = ${assigned_to} 
+          AND t.club_id = ${event.club_id} 
+          AND t.status != 'completed' 
+        ORDER BY t.created_at DESC
       `;
+
       if (activeTasks.length > 0) {
-        const volunteerRows = await sql`SELECT full_name FROM users WHERE id = ${assigned_to} LIMIT 1`;
-        const volunteerName = volunteerRows[0]?.full_name || "Selected volunteer";
-        return NextResponse.json(
-          {
-            success: false,
-            message: `Workload Risk Alert: ${volunteerName} is already assigned to an active task ("${activeTasks[0].name}"). Each volunteer can hold only 1 active task at a time to prevent burnout.`,
+        const volunteerRows = await sql`SELECT id, full_name, skills FROM users WHERE id = ${assigned_to} LIMIT 1`;
+        const v = volunteerRows[0] || { id: assigned_to, full_name: "Volunteer", skills: [] };
+
+        // Fetch free volunteers for AI to suggest as alternatives
+        const freeMemberRows = await sql`
+          SELECT u.id, u.full_name, u.skills
+          FROM club_members cm
+          JOIN users u ON u.id = cm.user_id
+          WHERE cm.club_id = ${event.club_id}
+            AND u.id != ${assigned_to}
+            AND (u.is_available IS NULL OR u.is_available = true)
+            AND NOT EXISTS (
+              SELECT 1 FROM tasks t 
+              WHERE t.assigned_to = u.id 
+                AND t.club_id = ${event.club_id} 
+                AND t.status != 'completed'
+            )
+          LIMIT 3
+        `;
+
+        const availableVolunteers = freeMemberRows.map((m: Record<string, any>) => ({
+          id: String(m.id),
+          name: String(m.full_name),
+          skills: Array.isArray(m.skills) ? m.skills : [],
+        }));
+
+        const aiCheck = await evaluateTaskAssignmentWithGroq({
+          volunteerId: String(v.id),
+          volunteerName: String(v.full_name),
+          volunteerSkills: Array.isArray(v.skills) ? v.skills : [],
+          newTask: {
+            name: name.trim(),
+            description: description?.trim() || null,
+            deadline: deadline || null,
           },
-          { status: 400 }
-        );
+          existingActiveTasks: activeTasks.map((t: Record<string, any>) => ({
+            id: String(t.id),
+            name: String(t.name),
+            status: String(t.status),
+            deadline: t.deadline ? String(t.deadline) : null,
+            event_name: t.event_name ? String(t.event_name) : null,
+          })),
+          availableVolunteers,
+        });
+
+        aiAdvisory = aiCheck.recommendation;
       }
     }
 
@@ -143,6 +198,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: "Task created and assigned successfully.",
+      ai_advisory: aiAdvisory,
       task: {
         ...newTask,
         assigned_to_name: assigneeName,

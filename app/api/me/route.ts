@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, isMemberAvailable, sql } from "../../lib/db";
+import { emitTaskEvent } from "../../lib/events";
+import { findBestSkillMatchWithGroq } from "../../lib/groq";
 
 export const runtime = "nodejs";
 
@@ -165,10 +167,107 @@ export async function PATCH(request: NextRequest) {
       is_active: isMemberAvailable(u),
     };
 
+    // If user marked as unavailable / deactivating, auto-reassign active tasks to peers with similar skillset
+    const reassignedTasksList: Array<{
+      taskId: string;
+      taskName: string;
+      reassignedToId: string;
+      reassignedToName: string;
+      reason: string;
+    }> = [];
+
+    if (is_available !== undefined && !newIsAvailable) {
+      try {
+        const activeTasks = await sql`
+          SELECT t.id, t.name, t.description, t.club_id, t.event_id, e.name as event_name
+          FROM tasks t
+          LEFT JOIN events e ON e.id = t.event_id
+          WHERE t.assigned_to = ${user.id} AND t.status != 'completed'
+        `;
+
+        for (const t of activeTasks) {
+          // Find candidate volunteers in the same club who are available and have 0 active tasks
+          const candidateRows = await sql`
+            SELECT u.id, u.full_name, u.skills
+            FROM club_members cm
+            JOIN users u ON u.id = cm.user_id
+            WHERE cm.club_id = ${t.club_id}
+              AND u.id != ${user.id}
+              AND (u.is_available IS NULL OR u.is_available = true)
+              AND NOT EXISTS (
+                SELECT 1 FROM tasks ot
+                WHERE ot.assigned_to = u.id
+                  AND ot.club_id = ${t.club_id}
+                  AND ot.status != 'completed'
+              )
+          `;
+
+          const candidates = candidateRows.map((c: Record<string, any>) => ({
+            id: String(c.id),
+            name: String(c.full_name),
+            skills: Array.isArray(c.skills) ? c.skills : [],
+          }));
+
+          if (candidates.length > 0) {
+            const matchResult = await findBestSkillMatchWithGroq({
+              task: {
+                id: String(t.id),
+                name: String(t.name),
+                description: t.description ? String(t.description) : null,
+              },
+              deactivatingUser: {
+                id: String(user.id),
+                name: String(user.full_name),
+                skills: Array.isArray(user.skills) ? user.skills : [],
+              },
+              candidates,
+            });
+
+            if (matchResult) {
+              await sql`
+                UPDATE tasks
+                SET assigned_to = ${matchResult.selectedVolunteerId}
+                WHERE id = ${t.id}
+              `;
+
+              emitTaskEvent(t.club_id, {
+                action: "reallocated",
+                task_id: t.id,
+                club_id: t.club_id,
+                event_id: t.event_id,
+                name: t.name,
+                status: "pending",
+                assigned_to: matchResult.selectedVolunteerId,
+                assigned_to_name: matchResult.selectedVolunteerName,
+                previous_assignee_name: user.full_name,
+                updated_at: new Date().toISOString(),
+              });
+
+              reassignedTasksList.push({
+                taskId: String(t.id),
+                taskName: String(t.name),
+                reassignedToId: matchResult.selectedVolunteerId,
+                reassignedToName: matchResult.selectedVolunteerName,
+                reason: matchResult.reasoning,
+              });
+            }
+          }
+        }
+      } catch (reassignErr) {
+        console.error("Auto-reassign error on deactivation:", reassignErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Profile and availability updated successfully.",
+      message:
+        reassignedTasksList.length > 0
+          ? `Profile updated. ${reassignedTasksList.length} active task${
+              reassignedTasksList.length > 1 ? "s were" : " was"
+            } automatically reassigned to available volunteers with matching skills.`
+          : "Profile and availability updated successfully.",
       user: updatedUser,
+      reassigned_tasks: reassignedTasksList,
     });
   } catch (error) {
     console.error("Error in PATCH /api/me:", error);

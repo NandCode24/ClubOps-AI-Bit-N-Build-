@@ -152,6 +152,161 @@ export default function EventDetailPage({
   const [addTaskLoading, setAddTaskLoading] = useState(false);
   const [addTaskError, setAddTaskError] = useState("");
 
+  // Groq AI Workload & Conflict Check
+  const [aiChecking, setAiChecking] = useState(false);
+  const [aiCheckResult, setAiCheckResult] = useState<{
+    allowed: boolean;
+    hasConflict: boolean;
+    conflictType: string;
+    reason: string;
+    recommendation: string;
+    suggestedAlternative?: { id: string; name: string; skills: string[] } | null;
+    modelUsed: string;
+  } | null>(null);
+
+  async function runAiWorkloadCheck(volunteerId: string) {
+    if (!volunteerId || !eventData) {
+      setAiCheckResult(null);
+      return;
+    }
+
+    try {
+      setAiChecking(true);
+      const res = await fetch("/api/ai/task-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          club_id: eventData.club_id,
+          event_id: eventId,
+          volunteer_id: volunteerId,
+          task_name: newTaskName.trim() || "Event Task",
+          task_description: newTaskDesc.trim(),
+          task_deadline: newTaskDeadline ? new Date(newTaskDeadline).toISOString() : null,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setAiCheckResult({
+          allowed: data.allowed,
+          hasConflict: data.hasConflict,
+          conflictType: data.conflictType,
+          reason: data.reason,
+          recommendation: data.recommendation,
+          suggestedAlternative: data.suggestedAlternative,
+          modelUsed: data.modelUsed,
+        });
+      }
+    } catch (err) {
+      console.error("AI check error:", err);
+    } finally {
+      setAiChecking(false);
+    }
+  }
+
+  // Reallocate Task Modal for Leader
+  const [showReallocModal, setShowReallocModal] = useState(false);
+  const [reallocatingTask, setReallocatingTask] = useState<TaskItem | null>(null);
+  const [reallocAssignee, setReallocAssignee] = useState("");
+  const [reallocAiChecking, setReallocAiChecking] = useState(false);
+  const [reallocAiCheckResult, setReallocAiCheckResult] = useState<{
+    allowed: boolean;
+    hasConflict: boolean;
+    reason: string;
+    recommendation: string;
+    suggestedAlternative?: { id: string; name: string; skills: string[] } | null;
+  } | null>(null);
+  const [reallocLoading, setReallocLoading] = useState(false);
+  const [reallocError, setReallocError] = useState("");
+  const [reallocSuccess, setReallocSuccess] = useState("");
+
+  function openReallocateModal(task: TaskItem) {
+    setReallocatingTask(task);
+    setReallocAssignee("");
+    setReallocAiCheckResult(null);
+    setReallocError("");
+    setReallocSuccess("");
+    setShowReallocModal(true);
+  }
+
+  async function runReallocAiCheck(volunteerId: string) {
+    if (!volunteerId || !eventData || !reallocatingTask) {
+      setReallocAiCheckResult(null);
+      return;
+    }
+
+    try {
+      setReallocAiChecking(true);
+      const res = await fetch("/api/ai/task-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          club_id: eventData.club_id,
+          event_id: eventId,
+          volunteer_id: volunteerId,
+          task_name: reallocatingTask.name,
+          task_description: reallocatingTask.description,
+          task_deadline: reallocatingTask.deadline,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setReallocAiCheckResult({
+          allowed: data.allowed,
+          hasConflict: data.hasConflict,
+          reason: data.reason,
+          recommendation: data.recommendation,
+          suggestedAlternative: data.suggestedAlternative,
+        });
+      }
+    } catch (err) {
+      console.error("AI check error during reallocate:", err);
+    } finally {
+      setReallocAiChecking(false);
+    }
+  }
+
+  async function handleConfirmReallocate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!reallocatingTask || !reallocAssignee) {
+      setReallocError("Please select a volunteer to inform and reassign this task to.");
+      return;
+    }
+
+    try {
+      setReallocLoading(true);
+      setReallocError("");
+      setReallocSuccess("");
+
+      const res = await fetch(`/api/tasks/${reallocatingTask.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assigned_to: reallocAssignee }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        if (data.ai_blocked) {
+          setReallocError(`${data.message}${data.recommendation ? `\n💡 Suggestion: ${data.recommendation}` : ""}`);
+          return;
+        }
+        throw new Error(data.message || "Failed to reallocate task.");
+      }
+
+      setReallocSuccess(data.message || "Task reallocated successfully!");
+      await loadEvent();
+      setTimeout(() => {
+        setShowReallocModal(false);
+        setReallocatingTask(null);
+      }, 1000);
+    } catch (err) {
+      setReallocError(err instanceof Error ? err.message : "Error reallocating task.");
+    } finally {
+      setReallocLoading(false);
+    }
+  }
+
   // Manage Event Members Modal for Leader
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [allClubMembers, setAllClubMembers] = useState<ClubMemberOption[]>([]);
@@ -416,6 +571,15 @@ export default function EventDetailPage({
             type: "completed",
           });
         }
+
+        if (payload.action === "reallocated") {
+          loadEvent();
+          setRealtimeToast({
+            title: "Task Reallocated 🔄",
+            message: `"${payload.name}" was reallocated to ${payload.assigned_to_name || "Volunteer"}.`,
+            type: "updated",
+          });
+        }
       });
     } catch (err) {
       console.error("SSE stream error:", err);
@@ -524,6 +688,11 @@ export default function EventDetailPage({
       return;
     }
 
+    if (!newTaskAssignee) {
+      setAddTaskError("Whom to inform is compulsory. Please select an active volunteer to assign and notify.");
+      return;
+    }
+
     try {
       setAddTaskLoading(true);
 
@@ -540,6 +709,10 @@ export default function EventDetailPage({
 
       const data = await res.json();
       if (!res.ok || !data.success) {
+        if (data.ai_blocked) {
+          setAddTaskError(`${data.message}${data.recommendation ? `\n💡 Suggestion: ${data.recommendation}` : ""}`);
+          return;
+        }
         throw new Error(data.message || "Failed to assign task.");
       }
 
@@ -548,6 +721,7 @@ export default function EventDetailPage({
       setNewTaskDesc("");
       setNewTaskAssignee("");
       setNewTaskDeadline("");
+      setAiCheckResult(null);
       setShowAddTaskModal(false);
 
       // Reload fresh event data
@@ -1301,15 +1475,28 @@ export default function EventDetailPage({
                       </div>
                     </div>
 
-                    {(eventData.is_leader || eventData.user_tasks.some((ut) => ut.id === task.id)) && (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleTask(task)}
-                        className="self-start md:self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition shrink-0 min-h-[38px]"
-                      >
-                        {isDone ? "Reopen Task" : "✓ Mark as Done"}
-                      </button>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2 self-start md:self-center shrink-0">
+                      {eventData.is_leader && !isDone && (
+                        <button
+                          type="button"
+                          onClick={() => openReallocateModal(task)}
+                          className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/40 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition flex items-center gap-1.5 min-h-[38px] shadow-2xs"
+                          title="Reallocate this task to another volunteer"
+                        >
+                          🔄 Reallocate
+                        </button>
+                      )}
+
+                      {(eventData.is_leader || eventData.user_tasks.some((ut) => ut.id === task.id)) && (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleTask(task)}
+                          className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition shrink-0 min-h-[38px]"
+                        >
+                          {isDone ? "Reopen Task" : "✓ Mark as Done"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -1461,15 +1648,25 @@ export default function EventDetailPage({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Assign To Volunteer
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Assign &amp; Inform Volunteer * <span className="text-rose-500 font-normal">(Compulsory)</span>
+                  </label>
+                  <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                    ⚡ AI Workload Guard
+                  </span>
+                </div>
                 <select
+                  required
                   value={newTaskAssignee}
-                  onChange={(e) => setNewTaskAssignee(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewTaskAssignee(val);
+                    runAiWorkloadCheck(val);
+                  }}
                   className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition"
                 >
-                  <option value="">-- Unassigned (Open for pickup) --</option>
+                  <option value="" disabled>-- Select Volunteer to Assign &amp; Inform * --</option>
                   {eventData.participants.map((p) => {
                     const hasActiveTask = eventData.tasks.some(
                       (t) => t.assigned_to === p.user_id && t.status !== "completed"
@@ -1483,6 +1680,84 @@ export default function EventDetailPage({
                     );
                   })}
                 </select>
+
+                {/* Live AI Workload & Conflict Status */}
+                {newTaskAssignee && (
+                  <div className="mt-2.5">
+                    {aiChecking ? (
+                      <div className="flex items-center gap-2 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30 p-3 text-xs text-indigo-700 dark:text-indigo-300">
+                        <span className="h-3.5 w-3.5 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin shrink-0" />
+                        <span className="font-semibold text-[11px]">
+                          AI Workload Guard: Analyzing volunteer active workload &amp; potential collision...
+                        </span>
+                      </div>
+                    ) : aiCheckResult ? (
+                      <div
+                        className={`rounded-2xl border p-3.5 text-xs space-y-2 transition-all ${
+                          !aiCheckResult.allowed
+                            ? "border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200"
+                            : "border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 font-bold text-xs">
+                            <span>{!aiCheckResult.allowed ? "🛡️ AI Workload Guard" : "✨ AI Verification Passed"}</span>
+                          </div>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                              !aiCheckResult.allowed
+                                ? "bg-amber-200/90 dark:bg-amber-900 text-amber-950 dark:text-amber-200"
+                                : "bg-emerald-200/90 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-200"
+                            }`}
+                          >
+                            {!aiCheckResult.allowed ? "⚠️ AI Advisory • Active Workload" : "✅ Available • 0 Active Tasks"}
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] leading-relaxed opacity-90">
+                          {aiCheckResult.reason}
+                        </p>
+
+                        {!aiCheckResult.allowed && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-amber-800 dark:text-amber-300 font-semibold bg-amber-100/70 dark:bg-amber-900/40 px-2.5 py-1 rounded-lg">
+                            <span>👑 Advisory only — Club Leader retains full assignment authority.</span>
+                          </div>
+                        )}
+
+                        {!aiCheckResult.allowed && aiCheckResult.recommendation && (
+                          <div className="pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
+                            <span className="font-semibold block text-[10px] text-amber-800 dark:text-amber-300">
+                              💡 AI Recommendation:
+                            </span>
+                            <span className="text-[11px] text-amber-900 dark:text-amber-200 block mt-0.5">
+                              {aiCheckResult.recommendation}
+                            </span>
+                          </div>
+                        )}
+
+                        {!aiCheckResult.allowed && aiCheckResult.suggestedAlternative && (
+                          <div className="pt-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const altId = aiCheckResult.suggestedAlternative!.id;
+                                setNewTaskAssignee(altId);
+                                runAiWorkloadCheck(altId);
+                              }}
+                              className="rounded-xl bg-amber-800 dark:bg-amber-700 hover:bg-amber-900 text-white px-3 py-1.5 text-[11px] font-bold transition flex items-center gap-1.5 shadow-xs"
+                            >
+                              👉 Assign to {aiCheckResult.suggestedAlternative.name} instead
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="text-[9px] opacity-60 text-right pt-0.5">
+                          Powered by ClubOps AI Engine
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -1513,17 +1788,216 @@ export default function EventDetailPage({
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setShowAddTaskModal(false)}
+                  onClick={() => {
+                    setAiCheckResult(null);
+                    setShowAddTaskModal(false);
+                  }}
                   className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={addTaskLoading}
-                  className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition disabled:opacity-50 min-h-[44px]"
+                  disabled={addTaskLoading || !newTaskAssignee}
+                  className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
                 >
-                  {addTaskLoading ? "Assigning..." : "Assign Task"}
+                  {addTaskLoading
+                    ? "Assigning..."
+                    : aiCheckResult && !aiCheckResult.allowed
+                    ? "Assign Anyway (Leader Override)"
+                    : "Assign & Inform Volunteer"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* LEADER REALLOCATE TASK MODAL */}
+      {showReallocModal && reallocatingTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/70 p-3 sm:p-4 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 md:p-8 shadow-2xl space-y-4 sm:space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Reallocate Task</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Transfer task responsibility from current volunteer to another active club member.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReallocModal(false);
+                  setReallocatingTask(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {reallocError && (
+              <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50 p-3 text-xs font-semibold text-red-700 dark:text-red-300 whitespace-pre-line">
+                ⚠️ {reallocError}
+              </div>
+            )}
+
+            {reallocSuccess && (
+              <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/50 p-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                ✓ {reallocSuccess}
+              </div>
+            )}
+
+            {/* Current Task Details Box */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                Target Task
+              </span>
+              <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                {reallocatingTask.name}
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Currently assigned to: <strong className="text-slate-700 dark:text-slate-300">{reallocatingTask.assigned_to_name || "Unassigned"}</strong>
+              </p>
+            </div>
+
+            <form onSubmit={handleConfirmReallocate} className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Reallocate To Volunteer * <span className="text-rose-500 font-normal">(Compulsory)</span>
+                  </label>
+                  <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                    ⚡ AI Workload Guard
+                  </span>
+                </div>
+                <select
+                  required
+                  value={reallocAssignee}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setReallocAssignee(val);
+                    runReallocAiCheck(val);
+                  }}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition"
+                >
+                  <option value="" disabled>-- Select Volunteer to Inform &amp; Reallocate * --</option>
+                  {eventData.participants
+                    .filter((p) => p.user_id !== reallocatingTask.assigned_to)
+                    .map((p) => {
+                      const hasActiveTask = eventData.tasks.some(
+                        (t) => t.id !== reallocatingTask.id && t.assigned_to === p.user_id && t.status !== "completed"
+                      );
+                      const isAway = p.is_active === false;
+
+                      return (
+                        <option key={p.user_id} value={p.user_id} disabled={isAway}>
+                          {p.full_name} ({p.assigned_role || "Volunteer"}) {isAway ? "🔴 [Away / Deactivated]" : hasActiveTask ? "🟡 [1 Active Task]" : "🟢 [Available]"}
+                        </option>
+                      );
+                    })}
+                </select>
+
+                {/* AI Workload Check Status */}
+                {reallocAssignee && (
+                  <div className="mt-2.5">
+                    {reallocAiChecking ? (
+                      <div className="flex items-center gap-2 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30 p-3 text-xs text-indigo-700 dark:text-indigo-300">
+                        <span className="h-3.5 w-3.5 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin shrink-0" />
+                        <span className="font-semibold text-[11px]">
+                          AI Workload Guard: Analyzing volunteer workload &amp; potential collision...
+                        </span>
+                      </div>
+                    ) : reallocAiCheckResult ? (
+                      <div
+                        className={`rounded-2xl border p-3.5 text-xs space-y-2 transition-all ${
+                          !reallocAiCheckResult.allowed
+                            ? "border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200"
+                            : "border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 font-bold text-xs">
+                            <span>{!reallocAiCheckResult.allowed ? "🛡️ AI Workload Guard" : "✨ AI Verification Passed"}</span>
+                          </div>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                              !reallocAiCheckResult.allowed
+                                ? "bg-amber-200/90 dark:bg-amber-900 text-amber-950 dark:text-amber-200"
+                                : "bg-emerald-200/90 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-200"
+                            }`}
+                          >
+                            {!reallocAiCheckResult.allowed ? "⚠️ AI Advisory • Active Workload" : "✅ Available • 0 Active Tasks"}
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] leading-relaxed opacity-90">
+                          {reallocAiCheckResult.reason}
+                        </p>
+
+                        {!reallocAiCheckResult.allowed && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-amber-800 dark:text-amber-300 font-semibold bg-amber-100/70 dark:bg-amber-900/40 px-2.5 py-1 rounded-lg">
+                            <span>👑 Advisory only — Club Leader retains full reallocation authority.</span>
+                          </div>
+                        )}
+
+                        {!reallocAiCheckResult.allowed && reallocAiCheckResult.recommendation && (
+                          <div className="pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
+                            <span className="font-semibold block text-[10px] text-amber-800 dark:text-amber-300">
+                              💡 AI Recommendation:
+                            </span>
+                            <span className="text-[11px] text-amber-900 dark:text-amber-200 block mt-0.5">
+                              {reallocAiCheckResult.recommendation}
+                            </span>
+                          </div>
+                        )}
+
+                        {!reallocAiCheckResult.allowed && reallocAiCheckResult.suggestedAlternative && (
+                          <div className="pt-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const altId = reallocAiCheckResult.suggestedAlternative!.id;
+                                setReallocAssignee(altId);
+                                runReallocAiCheck(altId);
+                              }}
+                              className="rounded-xl bg-amber-800 dark:bg-amber-700 hover:bg-amber-900 text-white px-3 py-1.5 text-[11px] font-bold transition flex items-center gap-1.5 shadow-xs"
+                            >
+                              👉 Reallocate to {reallocAiCheckResult.suggestedAlternative.name} instead
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="text-[9px] opacity-60 text-right pt-0.5">
+                          Powered by ClubOps AI Engine
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReallocModal(false);
+                    setReallocatingTask(null);
+                  }}
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reallocLoading || !reallocAssignee}
+                  className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
+                >
+                  {reallocLoading
+                    ? "Reallocating..."
+                    : reallocAiCheckResult && !reallocAiCheckResult.allowed
+                    ? "Confirm Reallocation (Leader Override)"
+                    : "Confirm Reallocation"}
                 </button>
               </div>
             </form>
