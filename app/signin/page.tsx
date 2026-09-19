@@ -192,9 +192,23 @@ export default function SignInPage() {
       setError("");
       setGoogleLoading(true);
 
-      await signInWithGoogle();
+      const user = await signInWithGoogle();
+      const idToken = await user.getIdToken();
+
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Google sign-in exchange failed.");
+      }
 
       router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed.");
     } finally {
