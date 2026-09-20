@@ -1,6 +1,6 @@
-import { cert, getApps, initializeApp, App } from "firebase-admin/app";
-import { getAuth, Auth } from "firebase-admin/auth";
-import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
+import { getAuth, type Auth } from "firebase-admin/auth";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 let adminApp: App | null = null;
 

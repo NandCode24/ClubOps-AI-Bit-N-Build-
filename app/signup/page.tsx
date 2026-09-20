@@ -207,7 +207,7 @@ export default function SignUpPage() {
         throw new Error(
           res.ok
             ? "Server returned an unexpected response format."
-            : `Google sign-up failed (${res.status}): ${text.slice(0, 100)}`
+            : `Google sign-up failed (${res.status}): ${text.slice(0, 100).trim() || "Server configuration error. Check Vercel environment variables and server logs."}`
         );
       }
 
