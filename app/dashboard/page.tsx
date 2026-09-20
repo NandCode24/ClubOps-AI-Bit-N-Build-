@@ -69,7 +69,7 @@ interface DashboardUser {
 function Logo() {
   return (
     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-[#738852] to-[#859B62] text-[#F6F4EE] shadow-md shadow-[#859B62]/25">
+      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-[#738852] to-[#859B62] text-[#F2ECE1] shadow-md shadow-[#859B62]/25">
         <svg
           width="18"
           height="18"
@@ -394,11 +394,11 @@ export default function DashboardPage() {
       )}
 
       <main
-        className={`min-h-screen bg-[#F6F4EE] dark:bg-[#121810] text-[#1B2213] dark:text-[#F4F6F0] transition-all duration-200 ${actionLoading ? "filter blur-sm pointer-events-none select-none" : ""
+        className={`min-h-screen bg-[#F2ECE1] dark:bg-[#121810] text-[#1B2213] dark:text-[#F4F6F0] transition-all duration-200 ${actionLoading ? "filter blur-sm pointer-events-none select-none" : ""
           }`}
       >
         {/* Top Navigation Bar */}
-        <header className="sticky top-0 z-30 border-b border-[#E2DDD0] dark:border-[#283422] bg-[#F6F4EE]/90 dark:bg-[#121810]/90 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3 transition-colors duration-200">
+        <header className="sticky top-0 z-30 border-b border-[#DFD7C8] dark:border-[#283422] bg-[#F2ECE1]/90 dark:bg-[#121810]/90 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3 transition-colors duration-200">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
             <Logo />
 
@@ -545,7 +545,7 @@ export default function DashboardPage() {
                   <div className="mt-8">
                     <Link
                       href="/joinClub"
-                      className="inline-flex w-full items-center justify-center rounded-xl bg-[#1B2213] dark:bg-[#F4F6F0] text-[#F6F4EE] dark:text-[#1B2213] py-3.5 text-sm font-bold hover:bg-[#28321C] dark:hover:bg-[#E4EAE0] transition active:scale-98"
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-[#1B2213] dark:bg-[#F4F6F0] text-[#F2ECE1] dark:text-[#1B2213] py-3.5 text-sm font-bold hover:bg-[#28321C] dark:hover:bg-[#E4EAE0] transition active:scale-98"
                     >
                       Enter Club Code to Join →
                     </Link>
@@ -670,7 +670,7 @@ export default function DashboardPage() {
                             <>
                               <Link
                                 href={`/club/${c.club_code}/members`}
-                                className="rounded-xl border border-[#DDD7C8] dark:border-[#283422] bg-white dark:bg-[#192015] px-3 py-2 text-xs font-semibold text-[#1B2213] dark:text-[#E4EAE0] hover:bg-[#F6F4EE] dark:hover:bg-[#202A1B] transition min-h-[40px] flex items-center shrink-0"
+                                className="rounded-xl border border-[#DDD7C8] dark:border-[#283422] bg-white dark:bg-[#192015] px-3 py-2 text-xs font-semibold text-[#1B2213] dark:text-[#E4EAE0] hover:bg-[#F2ECE1] dark:hover:bg-[#202A1B] transition min-h-[40px] flex items-center shrink-0"
                                 title="Manage member roster"
                               >
                                 👥 Members
@@ -848,7 +848,7 @@ export default function DashboardPage() {
                                 type="button"
                                 disabled={actionLoading === req.request_id}
                                 onClick={() => handleRequestAction(req.request_id, "reject")}
-                                className="rounded-xl border border-[#DDD7C8] dark:border-[#283422] bg-white dark:bg-[#192015] px-3.5 py-2 text-xs font-semibold text-[#4B5540] dark:text-[#C2CBB7] hover:bg-[#F6F4EE] dark:hover:bg-[#202A1B] transition disabled:opacity-50 min-h-[40px] flex items-center justify-center"
+                                className="rounded-xl border border-[#DDD7C8] dark:border-[#283422] bg-white dark:bg-[#192015] px-3.5 py-2 text-xs font-semibold text-[#4B5540] dark:text-[#C2CBB7] hover:bg-[#F2ECE1] dark:hover:bg-[#202A1B] transition disabled:opacity-50 min-h-[40px] flex items-center justify-center"
                               >
                                 Decline
                               </button>
@@ -890,7 +890,7 @@ export default function DashboardPage() {
                   type="button"
                   disabled={deletingClub}
                   onClick={() => setClubToDelete(null)}
-                  className="rounded-xl border border-[#DDD7C8] dark:border-[#283422] px-4 py-2.5 text-xs font-semibold text-[#4B5540] dark:text-[#C2CBB7] hover:bg-[#F6F4EE] dark:hover:bg-[#202A1B] min-h-[44px]"
+                  className="rounded-xl border border-[#DDD7C8] dark:border-[#283422] px-4 py-2.5 text-xs font-semibold text-[#4B5540] dark:text-[#C2CBB7] hover:bg-[#F2ECE1] dark:hover:bg-[#202A1B] min-h-[44px]"
                 >
                   Cancel
                 </button>

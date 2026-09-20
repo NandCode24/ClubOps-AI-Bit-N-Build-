@@ -33,7 +33,7 @@ export default function MobileBottomNav({ clubCode }: { clubCode?: string }) {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#E2DDD0] dark:border-[#283422] bg-[#F6F4EE]/95 dark:bg-[#121810]/95 backdrop-blur-lg px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)] transition-colors duration-200"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#DFD7C8] dark:border-[#283422] bg-[#F2ECE1]/95 dark:bg-[#121810]/95 backdrop-blur-lg px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)] transition-colors duration-200"
     >
       <div className="mx-auto flex max-w-md items-center justify-around">
         {/* 1. Dashboard */}

@@ -75,7 +75,7 @@ export default function UniversalLoader({
   }
 
   const contentCard = (
-    <div className="relative overflow-hidden rounded-3xl border border-[#E2DDD0] dark:border-[#283422] bg-[#F6F4EE]/95 dark:bg-[#141C12]/95 p-7 sm:p-9 shadow-2xl shadow-black/20 dark:shadow-black/50 backdrop-blur-2xl max-w-sm w-full mx-auto flex flex-col items-center text-center animate-float-gentle">
+    <div className="relative overflow-hidden rounded-3xl border border-[#DFD7C8] dark:border-[#283422] bg-[#F2ECE1]/95 dark:bg-[#141C12]/95 p-7 sm:p-9 shadow-2xl shadow-black/20 dark:shadow-black/50 backdrop-blur-2xl max-w-sm w-full mx-auto flex flex-col items-center text-center animate-float-gentle">
       {/* Top subtle highlight gradient */}
       <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[#859B62]/50 to-transparent" />
 
@@ -134,7 +134,7 @@ export default function UniversalLoader({
 
   // Full page layout mode for initial page loading
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-[#F6F4EE] dark:bg-[#121810] p-4 overflow-hidden transition-colors duration-200">
+    <main className="relative flex min-h-screen items-center justify-center bg-[#F2ECE1] dark:bg-[#121810] p-4 overflow-hidden transition-colors duration-200">
       {/* Ambient background glowing accents */}
       <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-[#859B62]/15 dark:bg-[#859B62]/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#738852]/15 dark:bg-[#738852]/10 blur-3xl" />

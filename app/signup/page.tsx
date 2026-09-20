@@ -243,7 +243,7 @@ export default function SignUpPage() {
       )}
 
       <main
-        className={`min-h-screen bg-[#F6F4EE] dark:bg-[#121810] px-4 py-6 sm:px-6 sm:py-12 transition-all duration-300 ${
+        className={`min-h-screen bg-[#F2ECE1] dark:bg-[#121810] px-4 py-6 sm:px-6 sm:py-12 transition-all duration-300 ${
           isAuthenticating ? "filter blur-md pointer-events-none select-none" : ""
         }`}
       >

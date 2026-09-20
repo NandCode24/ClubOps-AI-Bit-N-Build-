@@ -281,7 +281,7 @@ export default function Home() {
   }, [taglines.length]);
 
   return (
-    <div className="min-h-screen bg-[#F6F4EE] dark:bg-[#121810] text-[#1B2213] dark:text-[#F4F6F0] selection:bg-[#859B62] selection:text-white relative overflow-hidden font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#F2ECE1] dark:bg-[#121810] text-[#1B2213] dark:text-[#F4F6F0] selection:bg-[#859B62] selection:text-white relative overflow-hidden font-sans transition-colors duration-200">
       <GridPattern />
 
       {/* ─── Ambient Background Glows ─── */}
@@ -290,7 +290,7 @@ export default function Home() {
       <div className="pointer-events-none absolute top-[120vh] -left-40 w-[350px] h-[350px] bg-gradient-to-tr from-[#D5E2C5]/20 to-[#EAF0E2]/20 dark:from-[#202A1B] dark:to-[#192015] blur-[100px] rounded-full" />
 
       {/* ─── Navigation ─── */}
-      <header className="sticky top-0 z-50 border-b border-[#E2DDD0] dark:border-[#283422] bg-[#F6F4EE]/85 dark:bg-[#121810]/85 backdrop-blur-xl px-4 sm:px-8">
+      <header className="sticky top-0 z-50 border-b border-[#DFD7C8] dark:border-[#283422] bg-[#F2ECE1]/85 dark:bg-[#121810]/85 backdrop-blur-xl px-4 sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between h-16 sm:h-[72px]">
           <Link href="/" className="flex items-center gap-2.5 group min-w-0">
             <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-[#738852] to-[#859B62] text-white shadow-lg shadow-[#859B62]/25 group-hover:shadow-[#859B62]/40 group-hover:scale-105 transition-all duration-300">
@@ -453,7 +453,7 @@ export default function Home() {
           </Link>
           <Link
             href="/joinClub"
-            className="w-full sm:w-auto rounded-2xl border border-[#DDD7C8] dark:border-[#283422] bg-white/80 dark:bg-[#192015]/80 hover:bg-[#F6F4EE] dark:hover:bg-[#202A1B] px-8 py-4 text-base font-bold text-[#1B2213] dark:text-[#F4F6F0] backdrop-blur-md transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md"
+            className="w-full sm:w-auto rounded-2xl border border-[#DDD7C8] dark:border-[#283422] bg-white/80 dark:bg-[#192015]/80 hover:bg-[#F2ECE1] dark:hover:bg-[#202A1B] px-8 py-4 text-base font-bold text-[#1B2213] dark:text-[#F4F6F0] backdrop-blur-md transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md"
           >
             Join with Club Code
           </Link>
@@ -768,7 +768,7 @@ export default function Home() {
               </Link>
               <Link
                 href="/joinClub"
-                className="w-full sm:w-auto rounded-2xl border border-[#DDD7C8] dark:border-[#283422] bg-white/80 dark:bg-[#192015]/80 hover:bg-[#F6F4EE] dark:hover:bg-[#202A1B] px-10 py-4.5 text-base font-bold text-[#1B2213] dark:text-[#F4F6F0] backdrop-blur-md transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md"
+                className="w-full sm:w-auto rounded-2xl border border-[#DDD7C8] dark:border-[#283422] bg-white/80 dark:bg-[#192015]/80 hover:bg-[#F2ECE1] dark:hover:bg-[#202A1B] px-10 py-4.5 text-base font-bold text-[#1B2213] dark:text-[#F4F6F0] backdrop-blur-md transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md"
               >
                 Join a Club
               </Link>

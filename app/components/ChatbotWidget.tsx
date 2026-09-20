@@ -644,7 +644,7 @@ export default function ChatbotWidget() {
             {messages.length === 0 && (
               <div className="space-y-4 py-2">
                 {/* Hero Greeting Card */}
-                <div className="rounded-2xl border border-[#859B62]/30 dark:border-[#859B62]/30 bg-gradient-to-br from-[#EAF0E2]/60 via-white to-[#F6F4EE] dark:from-[#202A1B]/50 dark:via-[#151D13]/60 dark:to-[#121810] p-5 text-center shadow-xs">
+                <div className="rounded-2xl border border-[#859B62]/30 dark:border-[#859B62]/30 bg-gradient-to-br from-[#EAF0E2]/60 via-white to-[#F2ECE1] dark:from-[#202A1B]/50 dark:via-[#151D13]/60 dark:to-[#121810] p-5 text-center shadow-xs">
                   <div className="inline-flex p-3.5 rounded-2xl bg-gradient-to-tr from-[#5C7040] via-[#738852] to-[#859B62] text-white shadow-xl shadow-[#859B62]/25 mb-3">
                     <RadiantAiIcon className="w-8 h-8" variant="white" />
                   </div>
@@ -668,9 +668,9 @@ export default function ChatbotWidget() {
                         key={idx}
                         type="button"
                         onClick={() => handleSend(item.query)}
-                        className="group text-left rounded-2xl border border-[#E2DDD0] dark:border-[#283422] bg-white/80 dark:bg-[#151D13]/80 hover:border-[#859B62] dark:hover:border-[#859B62] hover:shadow-md hover:-translate-y-0.5 p-3.5 transition-all duration-200 flex items-center gap-3.5 cursor-pointer shadow-2xs"
+                        className="group text-left rounded-2xl border border-[#DFD7C8] dark:border-[#283422] bg-white/80 dark:bg-[#151D13]/80 hover:border-[#859B62] dark:hover:border-[#859B62] hover:shadow-md hover:-translate-y-0.5 p-3.5 transition-all duration-200 flex items-center gap-3.5 cursor-pointer shadow-2xs"
                       >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F6F4EE] dark:bg-[#202A1B] shrink-0 group-hover:scale-110 transition-transform">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2ECE1] dark:bg-[#202A1B] shrink-0 group-hover:scale-110 transition-transform">
                           {item.icon}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -712,7 +712,7 @@ export default function ChatbotWidget() {
                   className={`group relative max-w-[85%] rounded-2xl p-4 transition-all ${
                     msg.role === "user"
                       ? "bg-gradient-to-r from-[#5C7040] via-[#738852] to-[#859B62] text-white rounded-tr-xs shadow-md shadow-[#859B62]/15 text-xs sm:text-[13px] leading-relaxed"
-                      : "bg-[#F6F4EE]/90 dark:bg-[#151D13] border border-[#E2DDD0] dark:border-[#283422] text-[#1B2213] dark:text-[#F4F6F0] rounded-tl-xs shadow-xs"
+                      : "bg-[#F2ECE1]/90 dark:bg-[#151D13] border border-[#DFD7C8] dark:border-[#283422] text-[#1B2213] dark:text-[#F4F6F0] rounded-tl-xs shadow-xs"
                   }`}
                 >
                   {msg.role === "user" ? (
