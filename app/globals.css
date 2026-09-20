@@ -103,6 +103,44 @@
   --color-fuchsia-800: #5C7040;
   --color-fuchsia-900: #45522B;
   --color-fuchsia-950: #1B2213;
+
+  /* Slate re-mapped to Forest Moss Charcoal (eliminates cold blue in night mode) */
+  --color-slate-50: #F6F8F4;
+  --color-slate-100: #EDF3EA;
+  --color-slate-200: #DDE5D9;
+  --color-slate-300: #C4D2BE;
+  --color-slate-400: #98AA90;
+  --color-slate-500: #6B7E64;
+  --color-slate-600: #4B5B46;
+  --color-slate-700: #33402F;
+  --color-slate-800: #212C1E;
+  --color-slate-900: #151D13;
+  --color-slate-950: #0E140D;
+
+  /* Cyan & Blue re-mapped to organic light matcha & olive accents */
+  --color-cyan-50: #F6F8F2;
+  --color-cyan-100: #EAF0E2;
+  --color-cyan-200: #D5E2C5;
+  --color-cyan-300: #B7CCA0;
+  --color-cyan-400: #9AB277;
+  --color-cyan-500: #859B62;
+  --color-cyan-600: #738852;
+  --color-cyan-700: #5C7040;
+  --color-cyan-800: #45522B;
+  --color-cyan-900: #343E20;
+  --color-cyan-950: #1B2213;
+
+  --color-blue-50: #F6F8F2;
+  --color-blue-100: #EAF0E2;
+  --color-blue-200: #D5E2C5;
+  --color-blue-300: #B7CCA0;
+  --color-blue-400: #9AB277;
+  --color-blue-500: #859B62;
+  --color-blue-600: #738852;
+  --color-blue-700: #5C7040;
+  --color-blue-800: #45522B;
+  --color-blue-900: #343E20;
+  --color-blue-950: #1B2213;
 }
 
 * {
