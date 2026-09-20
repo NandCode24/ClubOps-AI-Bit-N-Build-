@@ -6,6 +6,7 @@ import Link from "next/link";
 import ThemeToggle from "@/app/components/ThemeToggle";
 import MobileBottomNav from "@/app/components/MobileBottomNav";
 import UniversalLoader from "@/app/components/UniversalLoader";
+import EventMeetingsHub from "@/app/components/meeting/EventMeetingsHub";
 
 interface Participant {
   participant_id: string;
@@ -1471,58 +1472,18 @@ export default function EventDetailPage({
             </div>
           </div>
 
-          {/* Virtual Meeting Section (if online or hybrid) */}
-          {eventData.mode !== "offline" && eventData.meeting_link && (
-            <div className="mt-6 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-200/70 dark:border-indigo-900/70 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white text-lg">
-                  📹
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">Official Event Video Meeting</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Connect with fellow volunteers and leaders directly via this room.
-                  </p>
-                  {eventData.meeting_code && (
-                    <span className="inline-block text-[11px] font-mono text-indigo-800 dark:text-indigo-300 bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800 mt-1">
-                      Room Code: <strong>{eventData.meeting_code}</strong>
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(eventData.meeting_link!);
-                    alert("Meeting link copied to clipboard!");
-                  }}
-                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition"
-                >
-                  Copy Link
-                </button>
-                {eventData.is_leader && (
-                  <button
-                    type="button"
-                    onClick={openMeetingModal}
-                    className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition shadow-2xs"
-                  >
-                    🎙️ Summarize Meeting Audio
-                  </button>
-                )}
-                <a
-                  href={eventData.meeting_link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-500 transition"
-                >
-                  Join Meeting Now →
-                </a>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* OFFICIAL EVENT MEETINGS & REAL-TIME VIDEO INTELLIGENCE HUB */}
+        <EventMeetingsHub
+          eventId={eventId}
+          clubId={eventData.club_id}
+          clubCode={clubCode}
+          eventName={eventData.name}
+          isLeader={eventData.is_leader}
+          onAnnouncementsRefresh={() => loadAnnouncements()}
+          onTasksRefresh={() => loadEvent()}
+        />
 
         {/* EVENT ANNOUNCEMENTS SECTION (LEADER BROADCASTS & MEMBER FEED) */}
         <div className="mb-6 sm:mb-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-8 shadow-xs">
