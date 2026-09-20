@@ -158,21 +158,21 @@ const staggerContainer = {
   },
 };
 
-const fadeInUp = {
+const fadeInUp: any = {
   hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.6, ease: "easeOut" },
   },
 };
 
-const scaleIn = {
+const scaleIn: any = {
   hidden: { opacity: 0, scale: 0.9 },
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.5, ease: "easeOut" },
   },
 };
 
@@ -201,9 +201,9 @@ const features = [
     title: "Smart Risk Reallocation",
     description:
       "When a member becomes unavailable, our AI analyzes remaining volunteers and auto-reassigns critical tasks to the best skill-matched alternative.",
-    gradient: "from-violet-500 to-purple-600",
-    bgGlow: "bg-violet-500/10 dark:bg-violet-500/15",
-    borderHover: "hover:border-violet-400/50",
+    gradient: "from-[#738852] to-[#859B62]",
+    bgGlow: "bg-[#859B62]/10 dark:bg-[#859B62]/15",
+    borderHover: "hover:border-[#859B62]/50",
   },
   {
     icon: featureIcons.users,
@@ -281,27 +281,27 @@ export default function Home() {
   }, [taglines.length]);
 
   return (
-    <div className="min-h-screen bg-[#FAFBFE] dark:bg-[#060912] text-slate-900 dark:text-white selection:bg-indigo-500 selection:text-white relative overflow-hidden font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#F6F4EE] dark:bg-[#121810] text-[#1B2213] dark:text-[#F4F6F0] selection:bg-[#859B62] selection:text-white relative overflow-hidden font-sans transition-colors duration-200">
       <GridPattern />
 
       {/* ─── Ambient Background Glows ─── */}
-      <div className="pointer-events-none absolute -top-60 left-1/2 -translate-x-1/2 w-[600px] sm:w-[1000px] h-[500px] bg-gradient-to-br from-indigo-400/25 via-violet-400/15 to-purple-500/10 dark:from-indigo-600/30 dark:via-violet-600/20 dark:to-purple-800/15 blur-[120px] sm:blur-[160px] rounded-full" />
-      <div className="pointer-events-none absolute top-[60vh] -right-60 w-[400px] h-[400px] bg-gradient-to-bl from-blue-400/15 to-cyan-400/10 dark:from-blue-600/15 dark:to-cyan-500/10 blur-[100px] rounded-full" />
-      <div className="pointer-events-none absolute top-[120vh] -left-40 w-[350px] h-[350px] bg-gradient-to-tr from-rose-400/10 to-pink-400/10 dark:from-rose-600/10 dark:to-pink-500/10 blur-[100px] rounded-full" />
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] sm:w-[900px] h-[500px] bg-gradient-to-b from-[#859B62]/15 via-[#B7CCA0]/10 to-transparent dark:from-[#859B62]/10 dark:via-[#45522B]/10 blur-[120px] rounded-full" />
+      <div className="pointer-events-none absolute top-[60vh] -right-40 w-[400px] h-[400px] bg-gradient-to-br from-[#859B62]/10 to-[#A0BC7B]/10 dark:from-[#859B62]/10 dark:to-[#45522B]/15 blur-[100px] rounded-full" />
+      <div className="pointer-events-none absolute top-[120vh] -left-40 w-[350px] h-[350px] bg-gradient-to-tr from-[#D5E2C5]/20 to-[#EAF0E2]/20 dark:from-[#202A1B] dark:to-[#192015] blur-[100px] rounded-full" />
 
       {/* ─── Navigation ─── */}
-      <header className="sticky top-0 z-50 border-b border-slate-200/60 dark:border-white/[0.06] bg-white/70 dark:bg-[#060912]/70 backdrop-blur-xl px-4 sm:px-8">
+      <header className="sticky top-0 z-50 border-b border-[#E2DDD0] dark:border-[#283422] bg-[#F6F4EE]/85 dark:bg-[#121810]/85 backdrop-blur-xl px-4 sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between h-16 sm:h-[72px]">
           <Link href="/" className="flex items-center gap-2.5 group min-w-0">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25 group-hover:shadow-indigo-500/40 group-hover:scale-105 transition-all duration-300">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-[#738852] to-[#859B62] text-white shadow-lg shadow-[#859B62]/25 group-hover:shadow-[#859B62]/40 group-hover:scale-105 transition-all duration-300">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
               </svg>
             </div>
             <div className="min-w-0">
-              <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              <span className="text-lg sm:text-xl font-black tracking-tight text-[#1B2213] dark:text-[#F4F6F0]">
                 ClubOps{" "}
-                <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+                <span className="text-[#859B62] dark:text-[#9AB277]">
                   AI
                 </span>
               </span>
@@ -326,7 +326,7 @@ export default function Home() {
             </Link>
             <Link
               href="/dashboard"
-              className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] transition-all duration-300 active:scale-95"
+              className="rounded-xl bg-[#859B62] hover:bg-[#738852] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#859B62]/25 hover:shadow-[#859B62]/40 hover:scale-[1.02] transition-all duration-300 active:scale-95"
             >
               Get Started →
             </Link>
@@ -397,11 +397,11 @@ export default function Home() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-slate-900 dark:text-white max-w-5xl mx-auto leading-[1.08]"
+          className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-[#1B2213] dark:text-[#F4F6F0] max-w-5xl mx-auto leading-[1.08]"
         >
           Run your club with
           <br />
-          <span className="bg-gradient-to-r from-indigo-600 via-violet-500 to-purple-600 dark:from-indigo-400 dark:via-violet-300 dark:to-purple-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#6E834F] via-[#859B62] to-[#9AB277] dark:from-[#8FA96D] dark:via-[#9AB277] dark:to-[#BCD1A6] bg-clip-text text-transparent">
             AI Superpowers
           </span>
         </motion.h1>
@@ -446,14 +446,14 @@ export default function Home() {
         >
           <Link
             href="/createClub"
-            className="group w-full sm:w-auto relative rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 px-8 py-4 text-base font-bold text-white shadow-xl shadow-indigo-500/25 hover:shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300 active:scale-[0.97] overflow-hidden"
+            className="group w-full sm:w-auto relative rounded-2xl bg-gradient-to-r from-[#738852] to-[#859B62] px-8 py-4 text-base font-bold text-white shadow-xl shadow-[#859B62]/25 hover:shadow-2xl hover:shadow-[#859B62]/35 transition-all duration-300 active:scale-[0.97] overflow-hidden"
           >
             <span className="relative z-10">Create a Club →</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#859B62] to-[#9AB277] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </Link>
           <Link
             href="/joinClub"
-            className="w-full sm:w-auto rounded-2xl border border-slate-200/80 dark:border-white/[0.12] bg-white/80 dark:bg-white/[0.04] hover:bg-slate-50 dark:hover:bg-white/[0.07] px-8 py-4 text-base font-bold text-slate-800 dark:text-white backdrop-blur-md transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md"
+            className="w-full sm:w-auto rounded-2xl border border-[#DDD7C8] dark:border-[#283422] bg-white/80 dark:bg-[#192015]/80 hover:bg-[#F6F4EE] dark:hover:bg-[#202A1B] px-8 py-4 text-base font-bold text-[#1B2213] dark:text-[#F4F6F0] backdrop-blur-md transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md"
           >
             Join with Club Code
           </Link>
@@ -491,12 +491,12 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-16 sm:mb-20"
           >
-            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 rounded-full border border-violet-200/60 dark:border-violet-500/20 bg-violet-50/80 dark:bg-violet-500/[0.06] px-4 py-1.5 text-xs font-semibold text-violet-700 dark:text-violet-300 mb-6">
+            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 rounded-full border border-[#D0DBC2] dark:border-[#2E3C27] bg-[#EBF0E2] dark:bg-[#202A1B] px-4 py-1.5 text-xs font-semibold text-[#3D4A27] dark:text-[#A0BC7B] mb-6">
               ✦ Powerful Features
             </motion.div>
-            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#1B2213] dark:text-[#F4F6F0]">
               Everything your club needs,{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#6E834F] to-[#859B62] dark:from-[#8FA96D] dark:to-[#BCD1A6] bg-clip-text text-transparent">
                 powered by AI
               </span>
             </motion.h2>
@@ -573,7 +573,7 @@ export default function Home() {
                 )}
                 <motion.div
                   whileHover={{ scale: 1.08 }}
-                  className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-2xl font-black shadow-xl shadow-indigo-500/25 mb-6"
+                  className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-[#738852] to-[#859B62] text-white text-2xl font-black shadow-xl shadow-[#859B62]/25 mb-6"
                 >
                   {step.number}
                 </motion.div>
@@ -597,17 +597,17 @@ export default function Home() {
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
             variants={staggerContainer}
-            className="rounded-3xl sm:rounded-[2rem] border border-slate-200/40 dark:border-white/[0.06] bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-10 sm:p-16 relative overflow-hidden"
+            className="rounded-3xl sm:rounded-[2rem] border border-[#D0DBC2] dark:border-[#2E3C27] bg-gradient-to-br from-[#45522B] via-[#5C7040] to-[#738852] p-10 sm:p-16 relative overflow-hidden shadow-xl"
           >
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-80 h-80 bg-white/[0.05] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-            <div className="absolute bottom-0 left-0 w-60 h-60 bg-indigo-400/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
+            <div className="absolute bottom-0 left-0 w-60 h-60 bg-[#859B62]/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
 
             <motion.div variants={fadeInUp} className="text-center mb-12 relative z-10">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
                 Built for Impact
               </h2>
-              <p className="mt-3 text-indigo-100/80 text-base sm:text-lg max-w-xl mx-auto">
+              <p className="mt-3 text-[#EAF0E2] text-base sm:text-lg max-w-xl mx-auto">
                 Designed to solve the real operational challenges faced by college clubs every day.
               </p>
             </motion.div>
@@ -748,27 +748,27 @@ export default function Home() {
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
           >
-            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#1B2213] dark:text-[#F4F6F0]">
               Ready to supercharge{" "}
-              <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-400 dark:via-violet-300 dark:to-purple-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#6E834F] via-[#859B62] to-[#9AB277] dark:from-[#8FA96D] dark:via-[#9AB277] dark:to-[#BCD1A6] bg-clip-text text-transparent">
                 your club?
               </span>
             </motion.h2>
-            <motion.p variants={fadeInUp} className="mt-4 text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+            <motion.p variants={fadeInUp} className="mt-4 text-base sm:text-lg text-[#737E67] dark:text-[#8E9A82] max-w-xl mx-auto">
               Join the clubs already running smarter with AI-powered operations.
               Create your club or jump in as a volunteer — it only takes 30 seconds.
             </motion.p>
             <motion.div variants={fadeInUp} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/createClub"
-                className="group w-full sm:w-auto relative rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 px-10 py-4.5 text-base font-bold text-white shadow-xl shadow-indigo-500/25 hover:shadow-2xl hover:shadow-indigo-500/35 transition-all duration-300 active:scale-[0.97] overflow-hidden"
+                className="group w-full sm:w-auto relative rounded-2xl bg-gradient-to-r from-[#738852] to-[#859B62] px-10 py-4.5 text-base font-bold text-white shadow-xl shadow-[#859B62]/25 hover:shadow-2xl hover:shadow-[#859B62]/35 transition-all duration-300 active:scale-[0.97] overflow-hidden"
               >
                 <span className="relative z-10">Create Your Club →</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#859B62] to-[#9AB277] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
               <Link
                 href="/joinClub"
-                className="w-full sm:w-auto rounded-2xl border border-slate-200/80 dark:border-white/[0.12] bg-white/80 dark:bg-white/[0.04] hover:bg-slate-50 dark:hover:bg-white/[0.07] px-10 py-4.5 text-base font-bold text-slate-800 dark:text-white backdrop-blur-md transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md"
+                className="w-full sm:w-auto rounded-2xl border border-[#DDD7C8] dark:border-[#283422] bg-white/80 dark:bg-[#192015]/80 hover:bg-[#F6F4EE] dark:hover:bg-[#202A1B] px-10 py-4.5 text-base font-bold text-[#1B2213] dark:text-[#F4F6F0] backdrop-blur-md transition-all duration-300 active:scale-[0.97] shadow-sm hover:shadow-md"
               >
                 Join a Club
               </Link>
@@ -781,13 +781,13 @@ export default function Home() {
       <footer className="relative z-10 border-t border-slate-200/60 dark:border-white/[0.06] py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#738852] to-[#859B62] text-white shadow-xs">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
               </svg>
             </div>
-            <span className="font-bold text-slate-900 dark:text-white">
-              ClubOps <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">AI</span>
+            <span className="font-bold text-[#1B2213] dark:text-[#F4F6F0]">
+              ClubOps <span className="text-[#859B62] dark:text-[#9AB277]">AI</span>
             </span>
           </div>
           <p className="text-sm text-slate-400 dark:text-slate-500">

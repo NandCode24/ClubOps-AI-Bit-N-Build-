@@ -271,9 +271,9 @@ export default function ProfilePage() {
   const isUserAway = user?.is_active === false;
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <main className="min-h-screen bg-[#F6F4EE] dark:bg-[#121810] text-[#1B2213] dark:text-[#F4F6F0] transition-colors duration-200">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3.5">
+      <header className="sticky top-0 z-30 border-b border-[#E2DDD0] dark:border-[#283422] bg-[#F6F4EE]/90 dark:bg-[#121810]/90 backdrop-blur-md px-3 sm:px-8 py-2.5 sm:py-3.5">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
           <Logo />
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">

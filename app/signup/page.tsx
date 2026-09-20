@@ -243,7 +243,7 @@ export default function SignUpPage() {
       )}
 
       <main
-        className={`min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-4 py-6 sm:px-6 sm:py-12 transition-all duration-300 ${
+        className={`min-h-screen bg-[#F6F4EE] dark:bg-[#121810] px-4 py-6 sm:px-6 sm:py-12 transition-all duration-300 ${
           isAuthenticating ? "filter blur-md pointer-events-none select-none" : ""
         }`}
       >
@@ -251,14 +251,14 @@ export default function SignUpPage() {
       <div className="mx-auto flex max-w-[620px] items-center justify-between mb-4">
         <Link
           href="/"
-          className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition"
+          className="text-xs font-semibold text-[#737E67] hover:text-[#1B2213] dark:text-[#8E9A82] dark:hover:text-[#F4F6F0] transition"
         >
           ← Back to Home
         </Link>
         <ThemeToggle />
       </div>
 
-      <div className="mx-auto w-full max-w-[540px] rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 sm:p-10 md:p-12 shadow-xl shadow-slate-200/40 dark:shadow-none backdrop-blur-md transition-colors duration-200">
+      <div className="mx-auto w-full max-w-[540px] rounded-3xl border border-[#E2DDD0] dark:border-[#283422] bg-white dark:bg-[#192015] p-5 sm:p-10 md:p-12 shadow-xl shadow-slate-200/40 dark:shadow-none backdrop-blur-md transition-colors duration-200">
         <div className="flex flex-col items-center">
           <Logo />
 

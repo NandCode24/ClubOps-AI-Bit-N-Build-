@@ -189,7 +189,7 @@ export default function CreateClubPage() {
       )}
 
       <main
-        className={`min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] px-3 py-4 sm:px-6 sm:py-12 pb-24 md:pb-8 transition-all duration-300 ${
+        className={`min-h-screen bg-[#F6F4EE] dark:bg-[#121810] px-3 py-4 sm:px-6 sm:py-12 pb-24 md:pb-8 transition-all duration-300 ${
           loading ? "filter blur-sm pointer-events-none select-none" : ""
         }`}
       >

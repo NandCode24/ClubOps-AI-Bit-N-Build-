@@ -550,21 +550,21 @@ export default function ChatbotWidget() {
                 </span>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               </div>
-              <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold block mt-0.5">
+              <span className="text-[11px] text-[#859B62] dark:text-[#9AB277] font-semibold block mt-0.5">
                 Ask ClubOps AI Copilot →
               </span>
             </div>
           </button>
 
-          {/* Luminous Glowing Circular FAB - Vibrant Jewel Gradient (NOT dark!) */}
+          {/* Luminous Glowing Circular FAB - Light Matcha Green Gradient */}
           <div className="relative flex items-center justify-center">
             {/* Multi-tone Ambient Breathing Aura */}
-            <div className="absolute -inset-2.5 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 opacity-75 blur-xl animate-pulse-glow pointer-events-none" />
+            <div className="absolute -inset-2.5 rounded-full bg-gradient-to-tr from-[#738852] via-[#859B62] to-[#9AB277] opacity-75 blur-xl animate-pulse-glow pointer-events-none" />
 
             <button
               type="button"
               onClick={() => setIsOpen(true)}
-              className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-500 text-white shadow-[0_12px_35px_rgba(79,70,229,0.55),0_0_25px_rgba(168,85,247,0.4)] hover:shadow-[0_18px_45px_rgba(79,70,229,0.75),0_0_35px_rgba(56,189,248,0.5)] border-2 border-white/60 ring-4 ring-indigo-500/20 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden"
+              className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#738852] via-[#859B62] to-[#8FA96D] text-white shadow-[0_12px_35px_rgba(133,155,98,0.4),0_0_25px_rgba(133,155,98,0.3)] hover:shadow-[0_18px_45px_rgba(133,155,98,0.6),0_0_35px_rgba(154,178,119,0.5)] border-2 border-white/60 ring-4 ring-[#859B62]/20 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden"
               aria-label="Open ClubOps Assistant"
             >
               {/* Glossy Top Glass Shimmer */}
@@ -585,12 +585,12 @@ export default function ChatbotWidget() {
         </div>
       )}
 
-      {/* CHAT WINDOW MODAL - SPACIOUS (520px x 700px) & VIBRANT MODERN DESIGN */}
+      {/* CHAT WINDOW MODAL */}
       {isOpen && (
-        <div className="fixed bottom-4 sm:bottom-6 right-3 sm:right-6 z-50 flex flex-col w-[520px] max-w-[calc(100vw-28px)] h-[700px] max-h-[90vh] rounded-3xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border border-indigo-100/90 dark:border-indigo-900/50 shadow-[0_25px_70px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95">
+        <div className="fixed bottom-4 sm:bottom-6 right-3 sm:right-6 z-50 flex flex-col w-[520px] max-w-[calc(100vw-28px)] h-[700px] max-h-[90vh] rounded-3xl bg-white/95 dark:bg-[#192015]/95 backdrop-blur-2xl border border-[#E2DDD0] dark:border-[#283422] shadow-[0_25px_70px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95">
           
-          {/* HEADER - VIBRANT MODERN INDIGO-VIOLET GRADIENT BANNER */}
-          <div className="relative z-10 flex items-center justify-between px-5 py-4 border-b border-indigo-700/40 bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 text-white shrink-0 shadow-md">
+          {/* HEADER - Light Matcha Green Gradient Banner */}
+          <div className="relative z-10 flex items-center justify-between px-5 py-4 border-b border-[#738852] bg-gradient-to-r from-[#738852] via-[#859B62] to-[#8FA96D] text-white shrink-0 shadow-md">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20 border border-white/30 backdrop-blur-md shadow-inner">
                 <RadiantAiIcon className="w-6 h-6" variant="white" />
