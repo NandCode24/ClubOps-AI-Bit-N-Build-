@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signInWithGoogle } from "../lib/auth";
+import { authClient } from "../lib/auth-client";
 import { ThemeToggle } from "../components/ThemeToggle";
 import UniversalLoader from "../components/UniversalLoader";
 
@@ -145,36 +145,17 @@ export default function SignUpPage() {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fullName,
-          email,
-          password,
-        }),
+      const { data, error } = await authClient.signUp.email({
+        email,
+        password,
+        name: fullName,
       });
 
-      const contentType = response.headers.get("content-type") || "";
-      let data: any = null;
-      if (contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        throw new Error(
-          response.ok
-            ? "Server returned an unexpected response format."
-            : `Signup failed (${response.status}): ${text.slice(0, 100)}`
-        );
+      if (error) {
+        throw new Error(error.message || "Unable to create account.");
       }
 
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to create account.");
-      }
-
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to create account."
@@ -189,37 +170,16 @@ export default function SignUpPage() {
       setError("");
       setGoogleLoading(true);
 
-      const user = await signInWithGoogle();
-      const idToken = await user.getIdToken();
-
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
+      const res = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
       });
 
-      const contentType = res.headers.get("content-type") || "";
-      let data: any = null;
-      if (contentType.includes("application/json")) {
-        data = await res.json();
-      } else {
-        const text = await res.text();
-        throw new Error(
-          res.ok
-            ? "Server returned an unexpected response format."
-            : `Google sign-up failed (${res.status}): ${text.slice(0, 100).trim() || "Server configuration error. Check Vercel environment variables and server logs."}`
-        );
+      if (res?.error) {
+        throw new Error(res.error.message || "Google sign-up failed.");
       }
-
-      if (!res.ok) {
-        throw new Error(data.message || "Google sign-up exchange failed.");
-      }
-
-      router.push("/dashboard");
-      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-in failed.");
-    } finally {
+      setError(err instanceof Error ? err.message : "Google sign-up failed.");
       setGoogleLoading(false);
     }
   }

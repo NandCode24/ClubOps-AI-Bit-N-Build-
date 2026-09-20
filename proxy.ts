@@ -1,31 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "./app/lib/auth-server";
 
-export function proxy(request: NextRequest) {
+const neonMiddleware = auth.middleware({ loginUrl: "/signin" });
+
+function hasActiveSession(request: NextRequest): boolean {
+  return request.cookies.getAll().some(
+    (c) =>
+      (c.name.includes("neon-auth") || c.name.includes("better-auth")) &&
+      (c.name.includes("session_token") || c.name.includes("session_data")) &&
+      Boolean(c.value)
+  );
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const sessionCookie = request.cookies.get("clubops_session")?.value;
-  const neonSession = request.cookies.get("neon_auth.session_token")?.value;
-  const isAuthenticated = Boolean(sessionCookie || neonSession);
+  const isAuthPage = pathname.startsWith("/signin") || pathname.startsWith("/signup");
+  const isAuthenticated = hasActiveSession(request);
 
-  const protectedPaths = ["/dashboard", "/club", "/createClub", "/joinClub", "/profile"];
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
-
-  const authPaths = ["/signin", "/signup"];
-  const isAuthPage = authPaths.some((p) => pathname.startsWith(p));
-
-  // If user tries to access a protected page without authentication, redirect to /signin
-  if (isProtected && !isAuthenticated) {
-    const signInUrl = new URL("/signin", request.url);
-    signInUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(signInUrl);
+  // If authenticated user visits /signin or /signup, redirect to /dashboard
+  if (isAuthPage) {
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.next();
   }
 
-  // If authenticated user visits signin/signup, redirect to dashboard
-  if (isAuthPage && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Use official Neon Auth middleware for protected routes
+  try {
+    return await neonMiddleware(request);
+  } catch (err) {
+    console.warn("Neon middleware check error, falling back to cookie inspection:", err);
+    if (!isAuthenticated) {
+      const signInUrl = new URL("/signin", request.url);
+      signInUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+    return NextResponse.next();
   }
-
-  return NextResponse.next();
 }
 
 export const config = {

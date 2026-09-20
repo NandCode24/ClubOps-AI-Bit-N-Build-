@@ -8,17 +8,26 @@ export async function POST() {
     message: "Signed out successfully.",
   });
 
-  // Clear server session cookies
-  response.cookies.delete("clubops_session");
-  response.cookies.set({
-    name: "clubops_session",
-    value: "",
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+  const cookiesToClear = [
+    "clubops_session",
+    "neon_auth.session_token",
+    "better-auth.session_token",
+    "__Secure-better-auth.session_token",
+    "neon_auth_session",
+  ];
+
+  for (const name of cookiesToClear) {
+    response.cookies.delete(name);
+    response.cookies.set({
+      name,
+      value: "",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+  }
 
   return response;
 }

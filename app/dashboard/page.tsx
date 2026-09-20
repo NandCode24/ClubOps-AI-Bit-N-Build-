@@ -6,6 +6,7 @@ import Link from "next/link";
 import ThemeToggle from "../components/ThemeToggle";
 import MobileBottomNav from "../components/MobileBottomNav";
 import UniversalLoader from "../components/UniversalLoader";
+import { authClient } from "../lib/auth-client";
 
 interface Member {
   membership_id: string;
@@ -362,12 +363,12 @@ export default function DashboardPage() {
 
   async function handleSignOut() {
     try {
+      await authClient.signOut();
       await fetch("/api/auth/signout", { method: "POST" });
-      router.push("/signin");
-      router.refresh();
     } catch (e) {
-      console.error(e);
-      router.push("/signin");
+      console.error("Error during sign out:", e);
+    } finally {
+      window.location.href = "/signin";
     }
   }
 

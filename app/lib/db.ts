@@ -1,6 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { cookies } from "next/headers";
-import { getAdminAuth } from "./firebase-admin";
+import { auth } from "./auth-server";
 
 const databaseUrl = process.env.DATABASE_URL || "postgresql://unconfigured_neon_db:missing@localhost:5432/placeholder";
 
@@ -79,37 +78,34 @@ export interface DbJoinRequest {
 }
 
 /**
- * Verifies session cookie and ensures user is synced in Neon DB
+ * Verifies session via Neon Auth and ensures user is synced in Neon DB
  */
 export async function getAuthUser(): Promise<DbUser | null> {
   try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("clubops_session")?.value;
-
-    if (!sessionCookie) {
+    const { data: session, error } = await auth.getSession();
+    if (error || !session?.user) {
       return null;
     }
 
-    const adminAuth = getAdminAuth();
-    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-
-    if (!decodedToken || !decodedToken.uid) {
-      return null;
-    }
-
-    const uid = decodedToken.uid;
-    const email = decodedToken.email || "";
+    const sessionUser = session.user;
+    const uid = String(sessionUser.id);
+    const email = String(sessionUser.email || "").toLowerCase();
+    const fullName = sessionUser.name || email.split("@")[0] || "User";
+    const photoURL = sessionUser.image || null;
 
     // Check if user exists in Neon DB
     const existingUsers = await sql`
       SELECT id, email, full_name, username, mobile_number, college_name, skills, photo_url, is_available, unavailable_until, unavailable_reason, created_at, updated_at
       FROM users
-      WHERE id = ${uid}
+      WHERE id = ${uid} OR email = ${email}
       LIMIT 1
     `;
 
     if (existingUsers.length > 0) {
       const u = existingUsers[0];
+      if (u.id !== uid) {
+        await sql`UPDATE users SET photo_url = COALESCE(photo_url, ${photoURL}) WHERE id = ${u.id}`;
+      }
       return {
         id: u.id,
         email: u.email,
@@ -118,7 +114,7 @@ export async function getAuthUser(): Promise<DbUser | null> {
         mobile_number: u.mobile_number,
         college_name: u.college_name,
         skills: u.skills || [],
-        photo_url: u.photo_url,
+        photo_url: u.photo_url || photoURL,
         is_available: u.is_available !== false,
         unavailable_until: u.unavailable_until ? String(u.unavailable_until) : null,
         unavailable_reason: u.unavailable_reason || null,
@@ -126,11 +122,6 @@ export async function getAuthUser(): Promise<DbUser | null> {
         updated_at: u.updated_at,
       };
     }
-
-    // If not found in Neon, fetch from Firebase Auth to sync
-    const firebaseUser = await adminAuth.getUser(uid);
-    const fullName = firebaseUser.displayName || email.split("@")[0] || "User";
-    const photoURL = firebaseUser.photoURL || null;
 
     const inserted = await sql`
       INSERT INTO users (id, email, full_name, photo_url, is_available)
