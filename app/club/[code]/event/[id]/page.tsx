@@ -601,14 +601,15 @@ export default function EventDetailPage({
       setPublishingAnnouncement(true);
       let contentToPost = summaryBrief.trim();
       if (summaryDecisions.length > 0) {
-        contentToPost += `\n\n📌 Key Decisions Made:\n${summaryDecisions.map((d) => `• ${d}`).join("\n")}`;
+        contentToPost += `\n\n📌 Key Decisions & Action Plan:\n${summaryDecisions.map((d) => `• ${d}`).join("\n")}`;
       }
+      contentToPost += `\n\n⚡ Let's execute these smoothly! All volunteers, please check your assigned tasks below.`;
 
       const res = await fetch(`/api/events/${eventId}/announcements`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: summaryTitle.trim() || `${eventData?.name || "Event"} Meeting Summary`,
+          title: summaryTitle.trim() || `📢 ${eventData?.name || "Event"} Official Announcement`,
           content: contentToPost,
         }),
       });
@@ -2943,9 +2944,9 @@ export default function EventDetailPage({
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 p-5 space-y-4">
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">📋</span>
+                        <span className="text-lg">📢</span>
                         <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">
-                          Executive Meeting Brief
+                          Official Broadcast Announcement Draft
                         </h4>
                       </div>
                       <span className="text-[11px] text-slate-400">
@@ -2955,25 +2956,27 @@ export default function EventDetailPage({
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Meeting Title
+                        Announcement Title
                       </label>
                       <input
                         type="text"
                         value={summaryTitle}
                         onChange={(e) => setSummaryTitle(e.target.value)}
                         className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition"
+                        placeholder="e.g. 📢 Core Action Plan & Deliverables: Event Name"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Brief Summary
+                        Announcement Body (Directly Broadcast to All Members)
                       </label>
                       <textarea
-                        rows={3}
+                        rows={4}
                         value={summaryBrief}
                         onChange={(e) => setSummaryBrief(e.target.value)}
                         className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition leading-relaxed"
+                        placeholder="Polished announcement message ready to be posted directly to the club feed..."
                       />
                     </div>
 

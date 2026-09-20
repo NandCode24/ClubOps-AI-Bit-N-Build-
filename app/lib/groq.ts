@@ -128,7 +128,7 @@ Respond strictly with valid JSON conforming to this format:
 `;
 
       const response = await client.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",
@@ -277,7 +277,7 @@ Respond strictly in valid JSON format:
 `;
 
       const response = await client.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",
@@ -462,8 +462,14 @@ In a team meeting, multiple members are present and responsibilities MUST be dis
    - Example 1: "Nand tu backend routes aur API integrate kar lena" -> Task: "Develop Backend REST Endpoints & Authentication", Assignee: Nand's ID
    - Example 2: "Kunjal poster and Instagram story bana do" -> Task: "Design Event Posters & Instagram Story Banners", Assignee: Kunjal's ID
    - Example 3: "Bansari please track participant registrations" -> Task: "Manage Event Registrations & Form Submissions", Assignee: Bansari's ID
-6. EXECUTIVE SUMMARY:
-   - Provide a clean, professional English briefing with a compelling title, a 2-3 paragraph executive summary, 3-5 explicit decisions made, and 3-5 agenda topics discussed.
+6. BROADCAST-READY CLUB ANNOUNCEMENT:
+   - This summary is intended to be PUBLISHED DIRECTLY as the official event announcement to all club members and volunteers.
+   - "title": A high-impact, professional announcement headline with an emoji (e.g. "📢 Action Plan & Core Deliverables: ${eventName || "Event"}", "🚀 Prep Sync Update: Key Roles & Timeline Finalized").
+   - "brief_summary": Write a motivating, polished announcement addressing the club members directly ("Hey team!").
+     * STRICT RULES: NEVER use passive robotic phrases like "The speaker distributed...", "The speaker said...", "The speaker assigned...", "In this audio recording...".
+     * Address the team directly with high energy and clarity ("Team,", "Hey everyone,").
+   - "key_decisions": 2-4 concrete, actionable decision points highlighting who is taking ownership (e.g., ["🎨 Dev is in charge of event banner and promotional design", "✍️ Nand will prepare the event speech and script"]).
+   - "key_topics": 2-4 agenda topics discussed.
 
 Event Participants Present (Distribute tasks to these members):
 ${participants.length > 0 ? participants.map((p) => `- ID: "${p.id}", Full Name: "${p.name}", Role: "${p.role || "Volunteer"}", Skills: [${(p.skills || []).join(", ")}]`).join("\n") : "No specific participant list provided"}
@@ -476,9 +482,9 @@ ${transcript}
 Respond STRICTLY in valid JSON format matching this exact schema:
 {
   "summary": {
-    "title": "string (professional meeting title)",
-    "brief_summary": "string (thorough 2-3 paragraph executive summary of context, discussions, and agreed milestones)",
-    "key_decisions": ["string (decision 1)", "string (decision 2)", "string (decision 3)"],
+    "title": "string (exciting broadcast title with emoji)",
+    "brief_summary": "string (inspiring, broadcast-ready announcement for club feed)",
+    "key_decisions": ["string (decision bullets)"],
     "key_topics": ["string (topic 1)", "string (topic 2)", "string (topic 3)"]
   },
   "tasks": [
@@ -495,7 +501,7 @@ Respond STRICTLY in valid JSON format matching this exact schema:
 `;
 
       const response = await client.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",

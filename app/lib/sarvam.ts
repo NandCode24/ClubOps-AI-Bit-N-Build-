@@ -367,10 +367,10 @@ ${
 }
 
 CRITICAL RULES:
-1. SUMMARY ACCURACY:
-   - "title": A concise title reflecting the event and discussion (e.g. "${eventName || "Event"} Planning & Task Delegation").
-   - "brief_summary": A strictly factual 2-4 sentence summary of ONLY what was discussed or decided in the transcript above. Do NOT make up, assume, or hallucinate discussions that did not happen.
-   - "key_decisions": List the specific decisions made in the meeting transcript. If none were explicitly made, state the main agreed takeaway.
+1. BROADCAST-READY CLUB ANNOUNCEMENT:
+   - "title": A high-impact, exciting announcement headline with an emoji (e.g. "📢 ${eventName || "Event"} Prep Sync: Action Items & Roles Locked In!").
+   - "brief_summary": Write a motivating, polished announcement addressing club members directly ("Hey team!"). NEVER use robotic passive phrases like "The speaker distributed...", "The speaker said...", or "In the audio...". Write from the leadership team to the members, clearly stating what is planned, who is leading what, and motivating the group.
+   - "key_decisions": 2-4 concrete, actionable decision bullets highlighting ownership (e.g., ["🎨 Dev is handling the event banner design", "✍️ Nand will write the speech"]).
    - "key_topics": 2-4 specific topic names discussed.
 
 2. TASK EXTRACTION:

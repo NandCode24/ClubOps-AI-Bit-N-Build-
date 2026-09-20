@@ -60,8 +60,8 @@ async function callGeminiGenerateContent(
     throw new Error("GEMINI_API_KEY is not configured in .env");
   }
 
-  // Model cascade: try fastest and newest models first
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+  // Model cascade: try fastest and newest active models first
+  const models = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3-flash-preview"];
   let lastError: Error | null = null;
 
   for (const model of models) {
@@ -146,10 +146,15 @@ CRITICAL INSTRUCTIONS:
    - Provide a complete, highly accurate, faithful transcript of everything spoken in the audio in "transcript".
    - Detect and state the spoken language in "language_detected" (e.g., "Hinglish (Hindi + English)", "English", "Hindi").
 
-2. FACTUAL EXECUTIVE BRIEF:
-   - "title": A professional, descriptive meeting title.
-   - "brief_summary": A strictly factual 2-4 sentence summary of ONLY what was discussed and agreed upon in the audio. DO NOT hallucinate, assume, or fabricate items not mentioned.
-   - "key_decisions": Array of concrete decisions explicitly made in the meeting.
+2. BROADCAST-READY CLUB ANNOUNCEMENT (NOT A THIRD-PERSON ROBOTIC REPORT!):
+   - This summary is intended to be PUBLISHED DIRECTLY to all club members and volunteers as an official announcement.
+   - "title": A high-impact, professional announcement headline with an emoji (e.g., "📢 Action Plan & Core Deliverables: ${eventName || "Event"}", "🚀 Prep Sync Recap: Key Roles & Timeline Finalized").
+   - "brief_summary": Write a polished, motivating, team-facing announcement addressing the club members directly (e.g., "Hey team! We just concluded our event planning sync for ${eventName || "the event"}. We have locked in our primary priorities and allocated key deliverables to make sure everything runs seamlessly. Let's keep the momentum high!").
+   - STRICT ANNOUNCEMENT RULES:
+     * NEVER use passive robotic phrases like "The speaker distributed...", "The speaker said...", "The speaker assigned...", "In this audio recording...".
+     * Address the team directly with high energy and clarity ("Team,", "Hey everyone,").
+     * Summarize what was agreed upon, who is leading what, and the collective game plan.
+   - "key_decisions": Array of concrete, actionable decision points highlighting who is taking ownership (e.g., ["🎨 Dev is in charge of event banner and promotional design", "✍️ Nand will prepare the event speech and script"]).
    - "key_topics": Array of 2-4 agenda topics discussed.
 
 3. MULTI-MEMBER TASK DELEGATION:
@@ -176,10 +181,10 @@ Output STRICTLY valid JSON conforming to this schema:
   "transcript": "string (verbatim transcript of spoken audio)",
   "language_detected": "string (e.g. Hinglish, English, Hindi)",
   "summary": {
-    "title": "string",
-    "brief_summary": "string",
-    "key_decisions": ["string"],
-    "key_topics": ["string"]
+    "title": "string (broadcast title with emoji)",
+    "brief_summary": "string (inspiring, broadcast-ready announcement for club feed)",
+    "key_decisions": ["string (decision bullets)"],
+    "key_topics": ["string (agenda topics)"]
   },
   "tasks": [
     {
@@ -276,7 +281,28 @@ Output STRICTLY valid JSON conforming to this schema:
     console.warn("GEMINI_API_KEY is not configured in .env. Falling back to Groq / Deterministic.");
   }
 
-  // Fallback to Groq Whisper + Llama if Gemini is unavailable
+  // Fallback to Sarvam AI if Gemini is unavailable
+  try {
+    const { transcribeMeetingAudioWithSarvam, summarizeMeetingAndExtractTasksWithSarvam } = await import("./sarvam");
+    const attendeeNames = participants.map((p) => p.name);
+    const transcription = await transcribeMeetingAudioWithSarvam(
+      audioBuffer,
+      fileName,
+      attendeeNames,
+      eventName
+    );
+    if (transcription.text && transcription.text.trim().length > 0) {
+      return await summarizeMeetingAndExtractTasksWithSarvam(
+        transcription.text,
+        participants,
+        eventName
+      );
+    }
+  } catch (sarvamErr) {
+    console.warn("Sarvam fallback encountered an issue, trying Groq:", sarvamErr);
+  }
+
+  // Fallback to Groq Whisper + Llama if Gemini and Sarvam are unavailable
   try {
     const { transcribeMeetingAudioWithGroq, summarizeMeetingAndExtractTasksWithGroq } = await import("./groq");
     const attendeeNames = participants.map((p) => p.name);
@@ -355,14 +381,14 @@ Output STRICTLY valid JSON conforming to this schema:
     transcript: "Audio analyzed successfully.",
     language_detected: "Multilingual Speech Recognition",
     summary: {
-      title: `${eventName || "Event"} Strategy & Task Briefing`,
+      title: `📢 ${eventName || "Event"} Official Action Plan & Task Update`,
       brief_summary:
-        "The team met to review event preparations and assign critical deliverables across team members.",
+        `Hey team! We just concluded our event prep sync for ${eventName || "our upcoming event"}. To ensure everything runs smoothly and milestone targets are hit on time, we have locked in our key objectives and mapped out immediate responsibilities across the team. Let's give it our best!`,
       key_decisions: [
-        "Approved core timeline and deliverables for the event.",
-        "Assigned ownership of technical development, media, and registrations to team members.",
+        "🎯 Approved the overall milestone timeline and delivery targets.",
+        "👥 Delegated primary ownership across design, technical setup, and attendee management.",
       ],
-      key_topics: ["Project Roadmap", "Task Allocation & Volunteer Ownership"],
+      key_topics: ["Milestones & Timeline", "Task Allocation & Volunteer Ownership"],
     },
     tasks: fallbackTasks,
     modelUsed: "ClubOps AI Engine",
