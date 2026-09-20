@@ -332,6 +332,10 @@ export default function EventDetailPage({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const pcmChunksRef = useRef<Float32Array[]>([]);
+  const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
 
   // Review & Edit State
   const [transcriptText, setTranscriptText] = useState("");
@@ -376,30 +380,73 @@ export default function EventDetailPage({
     setShowMeetingModal(false);
   }
 
+  function encodeWAV(samples: Float32Array, sampleRate: number): Blob {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+
+    function writeString(v: DataView, offset: number, str: string) {
+      for (let i = 0; i < str.length; i++) {
+        v.setUint8(offset + i, str.charCodeAt(i));
+      }
+    }
+
+    writeString(view, 0, "RIFF");
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(view, 8, "WAVE");
+    writeString(view, 12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM format
+    view.setUint16(22, 1, true); // Mono channel
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true); // 16 bits per sample
+    writeString(view, 36, "data");
+    view.setUint32(40, samples.length * 2, true);
+
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    }
+
+    return new Blob([buffer], { type: "audio/wav" });
+  }
+
   async function startRecording() {
     try {
       setMeetingError("");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
+      audioStreamRef.current = stream;
 
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        // Record directly at 16kHz PCM (Sarvam AI's optimal format)
+        const audioCtx = new AudioContextClass({ sampleRate: 16000 });
+        audioContextRef.current = audioCtx;
+        const source = audioCtx.createMediaStreamSource(stream);
+        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        audioProcessorRef.current = processor;
+        pcmChunksRef.current = [];
 
-      recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const file = new File([audioBlob], `meeting-record-${Date.now()}.webm`, { type: "audio/webm" });
-        setMeetingAudioFile(file);
-        if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
-        setAudioPreviewUrl(URL.createObjectURL(audioBlob));
-        stream.getTracks().forEach((track) => track.stop());
-      };
+        processor.onaudioprocess = (e) => {
+          const input = e.inputBuffer.getChannelData(0);
+          pcmChunksRef.current.push(new Float32Array(input));
+        };
 
-      recorder.start(250);
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+      } else {
+        // Fallback to MediaRecorder if AudioContext is unavailable
+        audioChunksRef.current = [];
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+        recorder.start(250);
+      }
+
       setIsRecording(true);
       setRecordingSeconds(0);
       recordingTimerRef.current = setInterval(() => {
@@ -412,12 +459,62 @@ export default function EventDetailPage({
   }
 
   function stopRecording() {
-    if (mediaRecorderRef.current && isRecording) {
+    if (!isRecording) return;
+    setIsRecording(false);
+
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+
+    // 1. If Web Audio API was used, build 16kHz WAV
+    if (audioProcessorRef.current && audioContextRef.current) {
+      try {
+        audioProcessorRef.current.disconnect();
+        audioProcessorRef.current = null;
+      } catch {}
+
+      const chunks = pcmChunksRef.current;
+      const totalSamples = chunks.reduce((acc, c) => acc + c.length, 0);
+      const merged = new Float32Array(totalSamples);
+      let offset = 0;
+      for (const chunk of chunks) {
+        merged.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      const sampleRate = audioContextRef.current.sampleRate || 16000;
+      try {
+        audioContextRef.current.close();
+      } catch {}
+      audioContextRef.current = null;
+
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop());
+        audioStreamRef.current = null;
+      }
+
+      const wavBlob = encodeWAV(merged, sampleRate);
+      const file = new File([wavBlob], `meeting-record-${Date.now()}.wav`, { type: "audio/wav" });
+      setMeetingAudioFile(file);
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+      setAudioPreviewUrl(URL.createObjectURL(wavBlob));
+      return;
+    }
+
+    // 2. MediaRecorder fallback
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const file = new File([audioBlob], `meeting-record-${Date.now()}.webm`, { type: "audio/webm" });
+        setMeetingAudioFile(file);
+        if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+        setAudioPreviewUrl(URL.createObjectURL(audioBlob));
+      };
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-        recordingTimerRef.current = null;
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop());
+        audioStreamRef.current = null;
       }
     }
   }
@@ -563,7 +660,11 @@ export default function EventDetailPage({
             name: t.name.trim(),
             description: t.description.trim(),
             assigned_to: t.assigned_to,
-            deadline: t.deadline ? new Date(t.deadline).toISOString() : null,
+            deadline: (() => {
+              if (!t.deadline) return null;
+              const d = new Date(t.deadline);
+              return !isNaN(d.getTime()) ? d.toISOString() : null;
+            })(),
           })),
         }),
       });

@@ -17,6 +17,21 @@ function getSarvamApiKey(): string | null {
   return key || null;
 }
 
+function cleanJsonResponse(raw: string): string {
+  let cleaned = String(raw).trim();
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
+  }
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+  return cleaned;
+}
+
 // ─── Speech-to-Text (Synchronous REST – for audio ≤ 30s) ────────────────────
 
 async function transcribeShortAudio(
@@ -24,14 +39,15 @@ async function transcribeShortAudio(
   fileName: string
 ): Promise<{ text: string; language: string }> {
   const apiKey = getSarvamApiKey();
-  if (!apiKey) throw new Error("SARVAM_API_KEY not configured");
+  if (!apiKey) throw new Error("SARVAM_API_KEY not configured in .env");
 
-  // Build multipart form data manually for Node.js fetch
   const uint8 = new Uint8Array(audioBuffer);
-  const blob = new Blob([uint8], { type: getMimeType(fileName) });
+  const mimeType = getMimeType(fileName);
+  const blob = new Blob([uint8], { type: mimeType });
   const formData = new FormData();
   formData.append("file", blob, fileName);
   formData.append("model", "saaras:v4");
+  formData.append("language_code", "unknown");
   formData.append("with_timestamps", "false");
 
   const response = await fetch(`${SARVAM_BASE_URL}/speech-to-text`, {
@@ -61,9 +77,9 @@ async function transcribeLongAudio(
   fileName: string
 ): Promise<{ text: string; language: string }> {
   const apiKey = getSarvamApiKey();
-  if (!apiKey) throw new Error("SARVAM_API_KEY not configured");
+  if (!apiKey) throw new Error("SARVAM_API_KEY not configured in .env");
 
-  // Step 1: Create batch job
+  // Step 1: Create batch job with auto language detection
   const initRes = await fetch(`${SARVAM_BASE_URL}/speech-to-text/job/v1`, {
     method: "POST",
     headers: {
@@ -72,7 +88,10 @@ async function transcribeLongAudio(
     },
     body: JSON.stringify({
       model: "saaras:v4",
-      job_parameters: { mode: "transcribe" },
+      job_parameters: {
+        mode: "transcribe",
+        language_code: "unknown",
+      },
     }),
   });
 
@@ -83,159 +102,194 @@ async function transcribeLongAudio(
 
   const initData = await initRes.json();
   const jobId = initData.job_id;
-
   if (!jobId) {
     throw new Error("Sarvam batch init did not return a job_id");
   }
 
-  // Step 2: Upload file to job
-  const uint8 = new Uint8Array(audioBuffer);
-  const blob = new Blob([uint8], { type: getMimeType(fileName) });
-  const uploadForm = new FormData();
-  uploadForm.append("file", blob, fileName);
+  // Step 2: Request pre-signed Azure upload URL
+  const uploadUrlRes = await fetch(`${SARVAM_BASE_URL}/speech-to-text/job/v1/upload-files`, {
+    method: "POST",
+    headers: {
+      "api-subscription-key": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      job_id: jobId,
+      files: [fileName],
+    }),
+  });
 
-  const uploadRes = await fetch(
-    `${SARVAM_BASE_URL}/speech-to-text/job/v1/${jobId}/upload`,
-    {
-      method: "POST",
-      headers: {
-        "api-subscription-key": apiKey,
-      },
-      body: uploadForm,
-    }
-  );
-
-  if (!uploadRes.ok) {
-    const errText = await uploadRes.text();
-    throw new Error(`Sarvam batch upload failed (${uploadRes.status}): ${errText}`);
+  if (!uploadUrlRes.ok) {
+    const errText = await uploadUrlRes.text();
+    throw new Error(`Sarvam batch upload-files failed (${uploadUrlRes.status}): ${errText}`);
   }
 
-  // Step 3: Start the job
-  const startRes = await fetch(
-    `${SARVAM_BASE_URL}/speech-to-text/job/v1/${jobId}/start`,
-    {
-      method: "POST",
-      headers: {
-        "api-subscription-key": apiKey,
-      },
-    }
-  );
+  const uploadUrlData = await uploadUrlRes.json();
+  const fileUrl = uploadUrlData.upload_urls?.[fileName]?.file_url;
+  if (!fileUrl) {
+    throw new Error(`Sarvam did not return an upload URL for ${fileName}`);
+  }
+
+  // Step 3: Upload audio bytes directly to Azure SAS URL with BlockBlob header
+  const mimeType = getMimeType(fileName);
+  const putRes = await fetch(fileUrl, {
+    method: "PUT",
+    headers: {
+      "x-ms-blob-type": "BlockBlob",
+      "Content-Type": mimeType,
+    },
+    body: new Uint8Array(audioBuffer),
+  });
+
+  if (!putRes.ok) {
+    const errText = await putRes.text();
+    throw new Error(`Azure blob upload failed (${putRes.status}): ${errText}`);
+  }
+
+  // Step 4: Start processing the batch job
+  const startRes = await fetch(`${SARVAM_BASE_URL}/speech-to-text/job/v1/${jobId}/start`, {
+    method: "POST",
+    headers: {
+      "api-subscription-key": apiKey,
+    },
+  });
 
   if (!startRes.ok) {
     const errText = await startRes.text();
     throw new Error(`Sarvam batch start failed (${startRes.status}): ${errText}`);
   }
 
-  // Step 4: Poll for result (max ~3 minutes with backoff)
-  const maxWaitMs = 180_000;
+  // Step 5: Poll for completion (max 2 minutes)
+  const maxWaitMs = 120_000;
   const pollIntervalMs = 3_000;
   const startTime = Date.now();
 
   while (Date.now() - startTime < maxWaitMs) {
     await sleep(pollIntervalMs);
 
-    const statusRes = await fetch(
-      `${SARVAM_BASE_URL}/speech-to-text/job/v1/${jobId}/status`,
-      {
-        method: "GET",
-        headers: {
-          "api-subscription-key": apiKey,
-        },
-      }
-    );
+    const statusRes = await fetch(`${SARVAM_BASE_URL}/speech-to-text/job/v1/${jobId}/status`, {
+      headers: {
+        "api-subscription-key": apiKey,
+      },
+    });
 
     if (!statusRes.ok) continue;
 
     const statusData = await statusRes.json();
-    const jobStatus = statusData.status?.toLowerCase?.() || "";
+    const state = statusData.job_state || statusData.status;
 
-    if (jobStatus === "completed" || jobStatus === "done" || jobStatus === "success") {
-      // Step 5: Get result
-      const resultRes = await fetch(
-        `${SARVAM_BASE_URL}/speech-to-text/job/v1/${jobId}/result`,
-        {
-          method: "GET",
-          headers: {
-            "api-subscription-key": apiKey,
-          },
-        }
-      );
-
-      if (!resultRes.ok) {
-        const errText = await resultRes.text();
-        throw new Error(`Sarvam batch result failed (${resultRes.status}): ${errText}`);
+    if (state === "Completed") {
+      const outputFileName = statusData.job_details?.[0]?.outputs?.[0]?.file_name;
+      if (!outputFileName) {
+        throw new Error("Sarvam batch job completed but no output file was listed.");
       }
 
-      const resultData = await resultRes.json();
-      // Handle various response shapes the API might return
-      const transcript =
-        resultData.transcript ||
-        resultData.text ||
-        (Array.isArray(resultData.results)
-          ? resultData.results.map((r: any) => r.transcript || r.text || "").join(" ")
-          : "");
+      // Step 6: Request pre-signed download URL
+      const downRes = await fetch(`${SARVAM_BASE_URL}/speech-to-text/job/v1/download-files`, {
+        method: "POST",
+        headers: {
+          "api-subscription-key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          job_id: jobId,
+          files: [outputFileName],
+        }),
+      });
 
+      if (!downRes.ok) {
+        const errText = await downRes.text();
+        throw new Error(`Sarvam download-files failed (${downRes.status}): ${errText}`);
+      }
+
+      const downData = await downRes.json();
+      const resultDownloadUrl =
+        downData.download_urls?.[outputFileName]?.file_url || downData.download_urls?.[outputFileName];
+
+      if (!resultDownloadUrl || typeof resultDownloadUrl !== "string") {
+        throw new Error("Failed to obtain transcript download URL from Sarvam.");
+      }
+
+      // Step 7: Download and return the transcript JSON
+      const transcriptRes = await fetch(resultDownloadUrl);
+      if (!transcriptRes.ok) {
+        throw new Error(`Failed to download final transcript file (${transcriptRes.status})`);
+      }
+
+      const transcriptJson = await transcriptRes.json();
       return {
-        text: transcript.trim(),
-        language: resultData.language_code || "auto-detected",
+        text: transcriptJson.transcript || transcriptJson.text || "",
+        language: transcriptJson.language_code || "auto-detected",
       };
     }
 
-    if (jobStatus === "failed" || jobStatus === "error") {
-      throw new Error(`Sarvam batch job failed: ${statusData.error || "Unknown error"}`);
+    if (state === "Failed" || state === "Error") {
+      const errorMsg = statusData.job_details?.[0]?.error_message || "Sarvam batch job processing failed.";
+      throw new Error(errorMsg);
     }
-
-    // Still processing – continue polling
   }
 
-  throw new Error("Sarvam batch job timed out after 3 minutes.");
+  throw new Error("Sarvam batch job processing timed out after 2 minutes.");
 }
 
 // ─── Public: Transcribe Meeting Audio ────────────────────────────────────────
 
 /**
- * Transcribe meeting audio using Sarvam Saaras v4.
- * Automatically picks sync API (≤30s estimated) or batch API (longer audio).
+ * Transcribe meeting audio using Sarvam Saaras v4 with automatic Groq Whisper fallback.
  */
 export async function transcribeMeetingAudioWithSarvam(
   audioBuffer: Buffer,
-  fileName: string = "meeting_audio.mp3",
+  fileName: string = "meeting_audio.wav",
   attendeeNames: string[] = [],
   eventName?: string
 ): Promise<{ text: string; language: string }> {
   const apiKey = getSarvamApiKey();
-  if (!apiKey) {
-    throw new Error("SARVAM_API_KEY is not configured in .env");
-  }
 
-  // Estimate audio duration from file size (rough: ~16KB/s for compressed audio)
-  const estimatedDurationSec = audioBuffer.length / 16_000;
-  const useSync = estimatedDurationSec <= 25; // Use sync for very short clips
-
-  try {
-    if (useSync) {
-      const result = await transcribeShortAudio(audioBuffer, fileName);
-      if (result.text.trim()) return result;
-      // If sync returned empty, try batch
-    }
-    return await transcribeLongAudio(audioBuffer, fileName);
-  } catch (primaryErr) {
-    console.warn("Sarvam primary transcription path failed:", primaryErr);
-
-    // Try the other path as fallback
+  if (apiKey) {
     try {
-      if (useSync) {
-        return await transcribeLongAudio(audioBuffer, fileName);
-      } else {
-        return await transcribeShortAudio(audioBuffer, fileName);
+      // 1. Try Sarvam Synchronous STT first
+      const syncResult = await transcribeShortAudio(audioBuffer, fileName);
+      if (syncResult.text && syncResult.text.trim().length > 0) {
+        return syncResult;
       }
-    } catch (fallbackErr) {
-      console.error("Sarvam transcription fully failed:", fallbackErr);
-      throw new Error(
-        "Unable to transcribe audio with Sarvam AI. Please ensure the audio is clear and in a supported format (.mp3, .wav, .m4a, .webm)."
-      );
+    } catch (syncErr) {
+      console.warn("Sarvam sync STT failed, attempting batch STT...", syncErr);
     }
+
+    try {
+      // 2. Try Sarvam Batch STT
+      const batchResult = await transcribeLongAudio(audioBuffer, fileName);
+      if (batchResult.text && batchResult.text.trim().length > 0) {
+        return batchResult;
+      }
+    } catch (batchErr) {
+      console.warn("Sarvam batch STT failed:", batchErr);
+    }
+  } else {
+    console.warn("SARVAM_API_KEY is not set in .env.");
   }
+
+  // 3. Seamless Fallback to Groq Whisper if Sarvam is unavailable or unable to parse
+  try {
+    console.info("Falling back to Groq Whisper for audio transcription...");
+    const { transcribeMeetingAudioWithGroq } = await import("./groq");
+    const groqResult = await transcribeMeetingAudioWithGroq(
+      audioBuffer,
+      fileName,
+      attendeeNames,
+      eventName
+    );
+    if (groqResult.text && groqResult.text.trim().length > 0) {
+      return groqResult;
+    }
+  } catch (groqErr) {
+    console.error("Groq Whisper fallback also failed:", groqErr);
+  }
+
+  // 4. If all speech engines fail, throw a clear actionable error
+  throw new Error(
+    "Unable to transcribe audio with Sarvam AI. Please ensure your microphone recording contains audible speech and is in a supported format (.wav, .mp3, .webm, .m4a)."
+  );
 }
 
 // ─── Chat Completions (sarvam-105b LLM) ─────────────────────────────────────
@@ -243,10 +297,10 @@ export async function transcribeMeetingAudioWithSarvam(
 async function sarvamChatCompletion(
   systemPrompt: string,
   userPrompt: string,
-  temperature: number = 0.05
+  temperature: number = 0.1
 ): Promise<string> {
   const apiKey = getSarvamApiKey();
-  if (!apiKey) throw new Error("SARVAM_API_KEY not configured");
+  if (!apiKey) throw new Error("SARVAM_API_KEY not configured in .env");
 
   const response = await fetch(`${SARVAM_BASE_URL}/v1/chat/completions`, {
     method: "POST",
@@ -261,6 +315,7 @@ async function sarvamChatCompletion(
         { role: "user", content: userPrompt },
       ],
       temperature,
+      max_tokens: 4096,
       response_format: { type: "json_object" },
     }),
   });
@@ -278,7 +333,7 @@ async function sarvamChatCompletion(
 
 /**
  * Analyze meeting transcript using Sarvam 105B LLM.
- * Generates executive summary and extracts multi-member task assignments.
+ * Generates an accurate, strictly factual executive summary and extracts individual member tasks.
  */
 export async function summarizeMeetingAndExtractTasksWithSarvam(
   transcript: string,
@@ -289,32 +344,17 @@ export async function summarizeMeetingAndExtractTasksWithSarvam(
 
   if (apiKey && transcript.trim().length > 0) {
     try {
-      const systemPrompt = `You are ClubOps AI, a multilingual operations intelligence engine specialized in Indian college club events. You analyze meeting transcripts in English, Hindi, Hinglish, Gujarati, Marathi, Tamil, Telugu, Kannada, and other Indian languages. You output strictly valid JSON without markdown fences. You excel at understanding Indian names, nicknames, and informal speech patterns common in Indian college meetings.`;
+      const systemPrompt = `You are ClubOps AI, an intelligent event operations manager. You analyze meeting transcripts with 100% factual accuracy and output valid JSON only without markdown code blocks.`;
 
       const userPrompt = `
-You are analyzing a meeting recording for the event "${eventName || "Club Event"}".
-The transcript may be spoken in English, Hindi, Hinglish, Gujarati, or any Indian language mix.
+Event Name: "${eventName || "Club Event"}"
 
-CRITICAL REQUIREMENT - MULTI-MEMBER TASK DELEGATION:
-In a team meeting, multiple members are present and responsibilities MUST be distributed across the attendees!
-1. DO NOT assign all tasks to only one person! Work must be delegated to ALL relevant members who are present, mentioned, or volunteered.
-2. If a member has multiple duties discussed (e.g., backend APIs + database migration), create distinct separate tasks for them.
-3. Every distinct responsibility or deliverable discussed (tech, design, marketing, registrations, sponsorship, operations, stage setup, documentation) must be extracted as a separate actionable task.
-4. Extract typically 3 to 8+ concrete tasks covering different team members.
-5. PHONETIC & HINGLISH NAME MATCHING (CRITICAL FOR INDIAN CONTEXT):
-   - Match spoken first names, nicknames, colloquial turns:
-     e.g., "Nand bhai", "Kunjal ko de do", "Bansari handle karegi", "Koradiya will check", "tech lead", "designer"
-   - Map these to the EXACT attendee ID from the participants list below.
-   - Example 1: "Nand tu backend routes aur API integrate kar lena" → Task: "Develop Backend REST Endpoints & Authentication", Assignee: Nand's ID
-   - Example 2: "Kunjal poster and Instagram story bana do" → Task: "Design Event Posters & Instagram Story Banners", Assignee: Kunjal's ID
-   - Example 3: "Bansari please registrations track karo" → Task: "Manage Event Registrations & Form Submissions", Assignee: Bansari's ID
-6. EXECUTIVE SUMMARY:
-   - Provide a clean, professional English briefing with a compelling title
-   - Write 2-3 paragraph executive summary
-   - List 3-5 explicit decisions made
-   - List 3-5 agenda topics discussed
+Meeting Transcript:
+"""
+${transcript}
+"""
 
-Event Participants Present (Distribute tasks to these members):
+Event Participants List (Assign tasks to these members):
 ${
   participants.length > 0
     ? participants
@@ -323,172 +363,160 @@ ${
             `- ID: "${p.id}", Full Name: "${p.name}", Role: "${p.role || "Volunteer"}", Skills: [${(p.skills || []).join(", ")}]`
         )
         .join("\n")
-    : "No specific participant list provided"
+    : "No participants provided"
 }
 
-Meeting Transcript:
-"""
-${transcript}
-"""
+CRITICAL RULES:
+1. SUMMARY ACCURACY:
+   - "title": A concise title reflecting the event and discussion (e.g. "${eventName || "Event"} Planning & Task Delegation").
+   - "brief_summary": A strictly factual 2-4 sentence summary of ONLY what was discussed or decided in the transcript above. Do NOT make up, assume, or hallucinate discussions that did not happen.
+   - "key_decisions": List the specific decisions made in the meeting transcript. If none were explicitly made, state the main agreed takeaway.
+   - "key_topics": 2-4 specific topic names discussed.
 
-Respond STRICTLY in valid JSON format matching this exact schema:
+2. TASK EXTRACTION:
+   - Extract EVERY actionable responsibility, deliverable, or chore mentioned in the transcript.
+   - Map each task to the person named or mentioned: match spoken first names, nicknames, or role ("Nand bhai", "Kunjal ko", "Bansari", "tech lead", etc.) to the EXACT participant ID from the participants list above.
+   - "deadline": If a specific day/date was mentioned (e.g. "by Friday", "tomorrow"), specify it, or null if not stated.
+   - "priority": "low" | "medium" | "high"
+
+Output STRICTLY in valid JSON matching this schema:
 {
   "summary": {
-    "title": "string (professional meeting title)",
-    "brief_summary": "string (thorough 2-3 paragraph executive summary of context, discussions, and agreed milestones)",
-    "key_decisions": ["string (decision 1)", "string (decision 2)", "string (decision 3)"],
-    "key_topics": ["string (topic 1)", "string (topic 2)", "string (topic 3)"]
+    "title": "string",
+    "brief_summary": "string",
+    "key_decisions": ["string"],
+    "key_topics": ["string"]
   },
   "tasks": [
     {
-      "name": "string (clear action-oriented title, e.g., 'Develop REST Endpoints for Registration')",
-      "description": "string (specific technical or operational deliverables, context, and expectations)",
+      "name": "string (action verb title)",
+      "description": "string (clear deliverable details)",
       "suggested_assignee_id": "string (must match one of the participant IDs above, or null)",
-      "suggested_assignee_name": "string (name of the matched participant, or null)",
-      "deadline": "string (ISO datetime YYYY-MM-DDTHH:mm or null)",
+      "suggested_assignee_name": "string (participant name, or null)",
+      "deadline": "string or null",
       "priority": "low" | "medium" | "high"
     }
   ]
 }
 `;
 
-      const raw = await sarvamChatCompletion(systemPrompt, userPrompt, 0.05);
-      const parsed = JSON.parse(raw);
+      const raw = await sarvamChatCompletion(systemPrompt, userPrompt, 0.1);
+      const cleaned = cleanJsonResponse(raw);
+      const parsed = JSON.parse(cleaned);
 
-      const summary = {
-        title: parsed.summary?.title || `${eventName || "Event"} Strategy & Task Briefing`,
-        brief_summary:
-          parsed.summary?.brief_summary ||
-          "The club leadership and volunteers met to review event readiness, finalize project requirements, and delegate responsibilities across the team.",
-        key_decisions:
-          Array.isArray(parsed.summary?.key_decisions) && parsed.summary.key_decisions.length > 0
-            ? parsed.summary.key_decisions
-            : [
-                "Approved overall event timeline and milestone targets.",
-                "Distributed technical, design, and operational deliverables across attending members.",
-              ],
-        key_topics:
-          Array.isArray(parsed.summary?.key_topics) && parsed.summary.key_topics.length > 0
-            ? parsed.summary.key_topics
-            : [
-                "Event Architecture & Planning",
-                "Task Allocation & Volunteer Ownership",
-                "Promotion & Registrations",
-              ],
-      };
+      if (parsed && parsed.summary && Array.isArray(parsed.tasks) && parsed.tasks.length > 0) {
+        const summary = {
+          title: parsed.summary?.title || `${eventName || "Event"} Meeting Briefing`,
+          brief_summary:
+            parsed.summary?.brief_summary ||
+            "The team met to review event preparations and assign deliverables across the group.",
+          key_decisions:
+            Array.isArray(parsed.summary?.key_decisions) && parsed.summary.key_decisions.length > 0
+              ? parsed.summary.key_decisions
+              : ["Approved initial task delegation and action points."],
+          key_topics:
+            Array.isArray(parsed.summary?.key_topics) && parsed.summary.key_topics.length > 0
+              ? parsed.summary.key_topics
+              : ["Event Preparation", "Task Allocation"],
+        };
 
-      const rawTasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
-      const tasks: ExtractedTaskItem[] = rawTasks.map((t: any) => {
-        let validAssigneeId: string | null = null;
-        let validAssigneeName: string | null = null;
+        const tasks: ExtractedTaskItem[] = parsed.tasks.map((t: any) => {
+          let validAssigneeId: string | null = null;
+          let validAssigneeName: string | null = null;
 
-        // Match by ID first
-        if (t.suggested_assignee_id) {
-          const match = participants.find((p) => p.id === t.suggested_assignee_id);
-          if (match) {
-            validAssigneeId = match.id;
-            validAssigneeName = match.name;
+          if (t.suggested_assignee_id) {
+            const match = participants.find((p) => p.id === t.suggested_assignee_id);
+            if (match) {
+              validAssigneeId = match.id;
+              validAssigneeName = match.name;
+            }
           }
-        }
 
-        // Fallback: fuzzy name matching (critical for Indian names)
-        if (!validAssigneeId && t.suggested_assignee_name) {
-          const nameLower = String(t.suggested_assignee_name).toLowerCase().trim();
-          const match = participants.find((p) => {
-            const pLower = p.name.toLowerCase().trim();
-            const firstName = pLower.split(" ")[0];
-            const lastName = pLower.split(" ").pop() || "";
-            return (
-              pLower === nameLower ||
-              pLower.includes(nameLower) ||
-              nameLower.includes(firstName) ||
-              nameLower.includes(lastName) ||
-              firstName.includes(nameLower) ||
-              (p.role && nameLower.includes(p.role.toLowerCase()))
-            );
-          });
-          if (match) {
-            validAssigneeId = match.id;
-            validAssigneeName = match.name;
-          } else {
-            validAssigneeName = t.suggested_assignee_name;
+          if (!validAssigneeId && t.suggested_assignee_name) {
+            const nameLower = String(t.suggested_assignee_name).toLowerCase().trim();
+            const match = participants.find((p) => {
+              const pLower = p.name.toLowerCase().trim();
+              const firstName = pLower.split(" ")[0];
+              const lastName = pLower.split(" ").pop() || "";
+              return (
+                pLower === nameLower ||
+                pLower.includes(nameLower) ||
+                nameLower.includes(firstName) ||
+                nameLower.includes(lastName) ||
+                firstName.includes(nameLower) ||
+                (p.role && nameLower.includes(p.role.toLowerCase()))
+              );
+            });
+            if (match) {
+              validAssigneeId = match.id;
+              validAssigneeName = match.name;
+            } else {
+              validAssigneeName = t.suggested_assignee_name;
+            }
           }
-        }
+
+          return {
+            name: String(t.name || "Action Item"),
+            description: String(t.description || ""),
+            suggested_assignee_id: validAssigneeId,
+            suggested_assignee_name: validAssigneeName,
+            deadline: t.deadline ? String(t.deadline) : null,
+            priority: (["low", "medium", "high"].includes(t.priority) ? t.priority : "medium") as
+              | "low"
+              | "medium"
+              | "high",
+          };
+        });
 
         return {
-          name: String(t.name || "Action Item"),
-          description: String(t.description || ""),
-          suggested_assignee_id: validAssigneeId,
-          suggested_assignee_name: validAssigneeName,
-          deadline: t.deadline ? String(t.deadline) : null,
-          priority: (["low", "medium", "high"].includes(t.priority) ? t.priority : "medium") as
-            | "low"
-            | "medium"
-            | "high",
+          transcript,
+          language_detected: "Sarvam Multilingual Recognition",
+          summary,
+          tasks,
+          modelUsed: "Sarvam AI (Saaras + 105B)",
         };
-      });
-
-      return {
-        transcript,
-        language_detected: "Sarvam Multilingual Recognition",
-        summary,
-        tasks,
-        modelUsed: "ClubOps AI Engine",
-      };
+      }
     } catch (err) {
-      console.error("Sarvam 105B summarization failed:", err);
-      // Fall through to Groq fallback below
+      console.error("Sarvam 105B summarization failed, trying Groq Llama 3.3:", err);
     }
   }
 
-  // If Sarvam LLM fails, attempt Groq as fallback for summarization
+  // Fallback to Groq Llama 3.3 for summarization
   try {
     const { summarizeMeetingAndExtractTasksWithGroq } = await import("./groq");
     return await summarizeMeetingAndExtractTasksWithGroq(transcript, participants, eventName);
   } catch (groqErr) {
-    console.warn("Groq fallback also failed:", groqErr);
+    console.warn("Groq fallback also failed, using deterministic fallback:", groqErr);
   }
 
-  // Final deterministic fallback: distribute tasks across all participants
+  // Final deterministic fallback
   const fallbackTasks: ExtractedTaskItem[] = [];
   const taskTemplates = [
     {
       keyword: ["tech", "code", "dev", "backend", "api", "database", "fullstack", "software"],
       name: "Develop Core Backend Endpoints & API Integration",
-      description:
-        "Build, test, and deploy necessary server APIs and ensure database integrity for the event.",
+      description: "Build and test server APIs and ensure database integrity for the event.",
       priority: "high" as const,
       daysOffset: 3,
     },
     {
       keyword: ["design", "ui", "ux", "poster", "graphics", "banner", "figma", "frontend"],
       name: "Design Promotional Posters & Social Media Banners",
-      description:
-        "Create official event flyers, digital banners for Instagram/LinkedIn, and presentation slides.",
+      description: "Create official event flyers and digital banners for Instagram/LinkedIn.",
       priority: "medium" as const,
       daysOffset: 2,
     },
     {
-      keyword: [
-        "registration",
-        "form",
-        "participant",
-        "student",
-        "outreach",
-        "volunteer",
-        "management",
-      ],
+      keyword: ["registration", "form", "participant", "student", "outreach", "volunteer"],
       name: "Manage Attendee Registrations & Participant Support",
-      description:
-        "Track Google Form responses, verify student attendance eligibility, and handle attendee queries.",
+      description: "Track form responses, verify student attendance, and handle queries.",
       priority: "high" as const,
       daysOffset: 4,
     },
     {
       keyword: ["sponsor", "finance", "budget", "logistics", "venue", "pr", "marketing"],
       name: "Coordinate Venue Logistics, Audio/Visual Setup & Schedule",
-      description:
-        "Confirm room booking, test projectors and microphones, and run a dry test 24 hours prior to launch.",
+      description: "Confirm room booking, test projectors and microphones, and run a dry test.",
       priority: "medium" as const,
       daysOffset: 5,
     },
@@ -515,36 +543,20 @@ Respond STRICTLY in valid JSON format matching this exact schema:
         priority: matchedTemplate.priority,
       });
     });
-  } else {
-    fallbackTasks.push({
-      name: "Finalize Deliverables & Team Task Check",
-      description:
-        "Review assigned responsibilities and report progress to the Club Leader before the deadline.",
-      suggested_assignee_id: null,
-      suggested_assignee_name: null,
-      deadline: new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16),
-      priority: "high",
-    });
   }
 
   return {
     transcript: transcript || "Meeting audio analyzed successfully.",
     language_detected: "Multilingual Auto Detection",
     summary: {
-      title: `${eventName || "Event"} Strategy & Comprehensive Task Briefing`,
+      title: `${eventName || "Event"} Strategy & Task Briefing`,
       brief_summary:
-        "The team convened to review event readiness, evaluate operational requirements, and allocate critical deliverables. Responsibilities across development, visual design, participant management, and logistics were delegated to ensure smooth execution.",
+        "The team met to review event preparations and assign critical deliverables across team members.",
       key_decisions: [
-        "Approved core timeline milestones and deliverables for the event.",
-        "Assigned ownership of technical development, promotional media, and attendee management to respective team members.",
-        "Scheduled a synchronized status checkpoint 48 hours prior to launch.",
+        "Approved core timeline and deliverables for the event.",
+        "Assigned ownership of technical development, media, and registrations to team members.",
       ],
-      key_topics: [
-        "Project Roadmap & Milestones",
-        "Multi-Member Task Allocation & Ownership",
-        "Participant Outreach & Media Preparation",
-        "Technical Readiness & Infrastructure",
-      ],
+      key_topics: ["Project Roadmap", "Task Allocation & Volunteer Ownership"],
     },
     tasks: fallbackTasks,
     modelUsed: "ClubOps AI Engine",
@@ -556,8 +568,8 @@ Respond STRICTLY in valid JSON format matching this exact schema:
 function getMimeType(fileName: string): string {
   const ext = fileName.split(".").pop()?.toLowerCase() || "";
   const mimeMap: Record<string, string> = {
-    mp3: "audio/mpeg",
     wav: "audio/wav",
+    mp3: "audio/mpeg",
     m4a: "audio/mp4",
     aac: "audio/aac",
     ogg: "audio/ogg",
@@ -567,7 +579,7 @@ function getMimeType(fileName: string): string {
     wma: "audio/x-ms-wma",
     amr: "audio/amr",
   };
-  return mimeMap[ext] || "audio/mpeg";
+  return mimeMap[ext] || "audio/wav";
 }
 
 function sleep(ms: number): Promise<void> {

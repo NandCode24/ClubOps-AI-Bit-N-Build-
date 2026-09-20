@@ -80,7 +80,13 @@ export async function POST(
       const taskName = String(t.name).trim();
       const taskDesc = t.description ? String(t.description).trim() : null;
       const assignedTo = String(t.assigned_to);
-      const deadline = t.deadline ? new Date(t.deadline).toISOString() : null;
+      let deadline: string | null = null;
+      if (t.deadline) {
+        const d = new Date(t.deadline);
+        if (!isNaN(d.getTime())) {
+          deadline = d.toISOString();
+        }
+      }
 
       const inserted = await sql`
         INSERT INTO tasks (

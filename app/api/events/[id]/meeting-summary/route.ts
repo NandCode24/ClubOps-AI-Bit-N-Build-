@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, sql } from "../../../../lib/db";
-import {
-  transcribeMeetingAudioWithSarvam,
-  summarizeMeetingAndExtractTasksWithSarvam,
-} from "../../../../lib/sarvam";
+import { analyzeMeetingAudioWithGemini } from "../../../../lib/gemini";
 import type { EventParticipantInfo } from "../../../../lib/groq";
 
 export const runtime = "nodejs";
@@ -132,28 +129,10 @@ export async function POST(
     const arrayBuffer = await audioFile.arrayBuffer();
     const audioBuffer = Buffer.from(arrayBuffer);
 
-    // 1. Multilingual Audio Transcription using Sarvam Saaras v4 (India-optimized)
-    const attendeeNames = participants.map((p) => p.name);
-    const transcription = await transcribeMeetingAudioWithSarvam(
+    // Multimodal Audio Analysis with Google Gemini (Transcription + Executive Summary + Task Delegation)
+    const analysis = await analyzeMeetingAudioWithGemini(
       audioBuffer,
-      audioFile.name || "meeting.mp3",
-      attendeeNames,
-      event.event_name
-    );
-
-    if (!transcription.text || transcription.text.trim().length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "No audible speech was detected in the audio file. Please ensure the recording is clear and contains speech.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // 2. Extract Executive Summary and Participant Tasks with Sarvam 105B LLM
-    const analysis = await summarizeMeetingAndExtractTasksWithSarvam(
-      transcription.text,
+      audioFile.name || "meeting.wav",
       participants,
       event.event_name
     );
