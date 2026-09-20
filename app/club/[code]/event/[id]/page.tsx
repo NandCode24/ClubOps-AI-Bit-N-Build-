@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useMemo } from "react";
+import { use, useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "@/app/components/ThemeToggle";
@@ -307,6 +307,316 @@ export default function EventDetailPage({
     }
   }
 
+  // AI Meeting Summarizer & Task Extraction State (Leader Only)
+  interface EditableExtractedTask {
+    tempId: string;
+    name: string;
+    description: string;
+    assigned_to: string;
+    deadline: string;
+    priority: "low" | "medium" | "high";
+  }
+
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [meetingStep, setMeetingStep] = useState<"upload" | "processing" | "review">("upload");
+  const [meetingInputTab, setMeetingInputTab] = useState<"upload" | "record">("upload");
+  const [meetingAudioFile, setMeetingAudioFile] = useState<File | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
+  const [meetingAnalyzing, setMeetingAnalyzing] = useState(false);
+  const [meetingProcessingStage, setMeetingProcessingStage] = useState("");
+  const [meetingError, setMeetingError] = useState("");
+
+  // Live Microphone Recording
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Review & Edit State
+  const [transcriptText, setTranscriptText] = useState("");
+  const [summaryTitle, setSummaryTitle] = useState("");
+  const [summaryBrief, setSummaryBrief] = useState("");
+  const [summaryDecisions, setSummaryDecisions] = useState<string[]>([]);
+  const [summaryTopics, setSummaryTopics] = useState<string[]>([]);
+  const [newDecisionInput, setNewDecisionInput] = useState("");
+
+  // Announcement Publishing
+  const [publishingAnnouncement, setPublishingAnnouncement] = useState(false);
+  const [announcementPublished, setAnnouncementPublished] = useState(false);
+
+  // Extracted Tasks Matrix
+  const [extractedTasks, setExtractedTasks] = useState<EditableExtractedTask[]>([]);
+  const [savingBatchTasks, setSavingBatchTasks] = useState(false);
+  const [batchTasksSuccess, setBatchTasksSuccess] = useState("");
+  const [batchTasksError, setBatchTasksError] = useState("");
+
+  function openMeetingModal() {
+    loadClubMembersForEvent();
+    setMeetingStep("upload");
+    setMeetingInputTab("upload");
+    setMeetingAudioFile(null);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    setAudioPreviewUrl(null);
+    setMeetingError("");
+    setAnnouncementPublished(false);
+    setBatchTasksSuccess("");
+    setBatchTasksError("");
+    setShowMeetingModal(true);
+  }
+
+  function closeMeetingModal() {
+    if (isRecording) {
+      stopRecording();
+    }
+    if (audioPreviewUrl) {
+      URL.revokeObjectURL(audioPreviewUrl);
+      setAudioPreviewUrl(null);
+    }
+    setShowMeetingModal(false);
+  }
+
+  async function startRecording() {
+    try {
+      setMeetingError("");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const file = new File([audioBlob], `meeting-record-${Date.now()}.webm`, { type: "audio/webm" });
+        setMeetingAudioFile(file);
+        if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+        setAudioPreviewUrl(URL.createObjectURL(audioBlob));
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      recorder.start(250);
+      setIsRecording(true);
+      setRecordingSeconds(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      setMeetingError("Unable to access microphone. Please check browser microphone permissions.");
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+  }
+
+  function handleAudioFileSelect(file: File | null) {
+    if (!file) return;
+    setMeetingError("");
+    setMeetingAudioFile(file);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    setAudioPreviewUrl(URL.createObjectURL(file));
+  }
+
+  async function handleAnalyzeMeetingAudio() {
+    if (!meetingAudioFile) {
+      setMeetingError("Please select an audio file or record a meeting audio snippet.");
+      return;
+    }
+
+    try {
+      setMeetingAnalyzing(true);
+      setMeetingError("");
+      setMeetingStep("processing");
+      setMeetingProcessingStage("Uploading meeting audio to ClubOps AI Engine...");
+
+      const timer1 = setTimeout(() => {
+        setMeetingProcessingStage("Transcribing speech with multilingual AI Whisper...");
+      }, 1600);
+
+      const timer2 = setTimeout(() => {
+        setMeetingProcessingStage("Extracting executive brief, decisions & volunteer tasks...");
+      }, 4200);
+
+      const formData = new FormData();
+      formData.append("audio", meetingAudioFile);
+
+      const res = await fetch(`/api/events/${eventId}/meeting-summary`, {
+        method: "POST",
+        body: formData,
+      });
+
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to analyze meeting audio.");
+      }
+
+      setTranscriptText(data.transcript || "");
+      setSummaryTitle(data.summary?.title || `${eventData?.name || "Event"} Meeting Summary`);
+      setSummaryBrief(data.summary?.brief_summary || "");
+      setSummaryDecisions(data.summary?.key_decisions || []);
+      setSummaryTopics(data.summary?.key_topics || []);
+
+      const mappedTasks: EditableExtractedTask[] = (data.tasks || []).map((t: any, idx: number) => ({
+        tempId: `extracted-${Date.now()}-${idx}`,
+        name: t.name || "",
+        description: t.description || "",
+        assigned_to: t.suggested_assignee_id || "",
+        deadline: t.deadline || "",
+        priority: t.priority || "medium",
+      }));
+
+      setExtractedTasks(mappedTasks);
+      setMeetingStep("review");
+      setAnnouncementPublished(false);
+      setBatchTasksSuccess("");
+      setBatchTasksError("");
+    } catch (err) {
+      setMeetingError(err instanceof Error ? err.message : "Error analyzing meeting audio.");
+      setMeetingStep("upload");
+    } finally {
+      setMeetingAnalyzing(false);
+    }
+  }
+
+  async function handlePublishMeetingAnnouncement() {
+    if (!summaryBrief.trim()) {
+      alert("Executive summary content cannot be empty.");
+      return;
+    }
+
+    try {
+      setPublishingAnnouncement(true);
+      let contentToPost = summaryBrief.trim();
+      if (summaryDecisions.length > 0) {
+        contentToPost += `\n\n📌 Key Decisions Made:\n${summaryDecisions.map((d) => `• ${d}`).join("\n")}`;
+      }
+
+      const res = await fetch(`/api/events/${eventId}/announcements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: summaryTitle.trim() || `${eventData?.name || "Event"} Meeting Summary`,
+          content: contentToPost,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to publish announcement.");
+      }
+
+      setAnnouncementPublished(true);
+      setAnnouncements((prev) => [data.announcement, ...prev]);
+      playSuccessChime();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error publishing announcement.");
+    } finally {
+      setPublishingAnnouncement(false);
+    }
+  }
+
+  async function handleSaveBatchTasks() {
+    if (extractedTasks.length === 0) {
+      setBatchTasksError("No tasks to assign. Click '+ Add Another Task' to add one.");
+      return;
+    }
+
+    // Validate tasks: name and assigned_to are strictly required
+    for (let i = 0; i < extractedTasks.length; i++) {
+      const t = extractedTasks[i];
+      if (!t.name.trim()) {
+        setBatchTasksError(`Task #${i + 1} requires a task name.`);
+        return;
+      }
+      if (!t.assigned_to) {
+        setBatchTasksError(`Task "${t.name}" requires an assigned volunteer. "Whom to inform" is compulsory.`);
+        return;
+      }
+    }
+
+    try {
+      setSavingBatchTasks(true);
+      setBatchTasksError("");
+      setBatchTasksSuccess("");
+
+      const res = await fetch(`/api/events/${eventId}/tasks/batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tasks: extractedTasks.map((t) => ({
+            name: t.name.trim(),
+            description: t.description.trim(),
+            assigned_to: t.assigned_to,
+            deadline: t.deadline ? new Date(t.deadline).toISOString() : null,
+          })),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to assign tasks.");
+      }
+
+      setBatchTasksSuccess(`🎉 Successfully assigned ${data.count} tasks to volunteers!`);
+      playSuccessChime();
+      await loadEvent();
+    } catch (err) {
+      setBatchTasksError(err instanceof Error ? err.message : "Error saving tasks.");
+    } finally {
+      setSavingBatchTasks(false);
+    }
+  }
+
+  function handleUpdateExtractedTask(index: number, field: keyof EditableExtractedTask, value: any) {
+    setExtractedTasks((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, [field]: value } : t))
+    );
+  }
+
+  function handleDeleteExtractedTask(index: number) {
+    setExtractedTasks((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleAddNewTask() {
+    setExtractedTasks((prev) => [
+      ...prev,
+      {
+        tempId: `manual-${Date.now()}`,
+        name: "",
+        description: "",
+        assigned_to: "",
+        deadline: "",
+        priority: "medium",
+      },
+    ]);
+  }
+
+  function handleAddDecision() {
+    if (!newDecisionInput.trim()) return;
+    setSummaryDecisions((prev) => [...prev, newDecisionInput.trim()]);
+    setNewDecisionInput("");
+  }
+
+  function handleDeleteDecision(idx: number) {
+    setSummaryDecisions((prev) => prev.filter((_, i) => i !== idx));
+  }
+
   // Manage Event Members Modal for Leader
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [allClubMembers, setAllClubMembers] = useState<ClubMemberOption[]>([]);
@@ -314,6 +624,32 @@ export default function EventDetailPage({
   const [memberSearch, setMemberSearch] = useState("");
   const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
   const [memberActionMsg, setMemberActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Combined Volunteer Assignee Options for AI Task Extraction and Reassignment
+  const availableAssigneeOptions = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; role?: string }>();
+    if (allClubMembers && allClubMembers.length > 0) {
+      for (const m of allClubMembers) {
+        map.set(m.user_id, {
+          id: m.user_id,
+          name: m.full_name,
+          role: m.assigned_role || undefined,
+        });
+      }
+    }
+    if (eventData?.participants) {
+      for (const p of eventData.participants) {
+        if (!map.has(p.user_id)) {
+          map.set(p.user_id, {
+            id: p.user_id,
+            name: p.full_name,
+            role: p.assigned_role || "Participant",
+          });
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [allClubMembers, eventData?.participants]);
 
   // Delete Event Modal for Leader
   const [showDeleteEventModal, setShowDeleteEventModal] = useState(false);
@@ -1064,6 +1400,15 @@ export default function EventDetailPage({
                 >
                   Copy Link
                 </button>
+                {eventData.is_leader && (
+                  <button
+                    type="button"
+                    onClick={openMeetingModal}
+                    className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition shadow-2xs"
+                  >
+                    🎙️ Summarize Meeting Audio
+                  </button>
+                )}
                 <a
                   href={eventData.meeting_link}
                   target="_blank"
@@ -1380,13 +1725,22 @@ export default function EventDetailPage({
             </div>
 
             {eventData.is_leader && (
-              <button
-                type="button"
-                onClick={() => setShowAddTaskModal(true)}
-                className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:from-indigo-500 hover:to-violet-500 active:scale-95 transition"
-              >
-                + Assign New Task
-              </button>
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={openMeetingModal}
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/50 px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 active:scale-95 transition shadow-2xs"
+                >
+                  🎙️ AI Meeting Summarizer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTaskModal(true)}
+                  className="w-full sm:w-auto min-h-[44px] flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:from-indigo-500 hover:to-violet-500 active:scale-95 transition"
+                >
+                  + Assign New Task
+                </button>
+              </div>
             )}
           </div>
 
@@ -2181,6 +2535,611 @@ export default function EventDetailPage({
               >
                 {deletingEvent ? "Deleting..." : "Yes, Delete Event"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI MEETING SUMMARIZER & TASK GENERATOR MODAL (LEADER ONLY) */}
+      {showMeetingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 sm:px-6 py-4 shrink-0 bg-slate-50/50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-500 text-white font-bold text-lg shadow-md shadow-indigo-500/20">
+                  🎙️
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-slate-900 dark:text-white text-base sm:text-lg">
+                      AI Meeting Summarizer &amp; Task Generator
+                    </h3>
+                    <span className="rounded-full bg-indigo-100 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                      ClubOps AI
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Multilingual audio transcription, decision summaries, and volunteer task extraction.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeMeetingModal}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+              {/* STEP 1: UPLOAD OR RECORD */}
+              {meetingStep === "upload" && (
+                <div className="space-y-5">
+                  {/* Mode Tabs */}
+                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isRecording) stopRecording();
+                        setMeetingInputTab("upload");
+                      }}
+                      className={`rounded-xl px-4 py-2 text-xs font-bold transition flex items-center gap-2 ${
+                        meetingInputTab === "upload"
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      <span>📁</span> Upload Audio File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMeetingInputTab("record");
+                      }}
+                      className={`rounded-xl px-4 py-2 text-xs font-bold transition flex items-center gap-2 ${
+                        meetingInputTab === "record"
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      <span>🎙️</span> Live Microphone Record
+                    </button>
+                  </div>
+
+                  {/* Tab 1: Upload File */}
+                  {meetingInputTab === "upload" && (
+                    <div className="space-y-4">
+                      <div
+                        onClick={() => document.getElementById("meeting-audio-input")?.click()}
+                        className="border-2 border-dashed border-indigo-200 dark:border-indigo-800/80 hover:border-indigo-400 dark:hover:border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/10 rounded-2xl p-6 text-center cursor-pointer transition hover:bg-indigo-50/40"
+                      >
+                        <input
+                          id="meeting-audio-input"
+                          type="file"
+                          accept="audio/*,.mp3,.wav,.m4a,.webm,.ogg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            handleAudioFileSelect(file);
+                          }}
+                          className="hidden"
+                        />
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-300 text-2xl mb-3 shadow-inner">
+                          🎵
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                          {meetingAudioFile ? meetingAudioFile.name : "Click to browse or drop meeting audio here"}
+                        </h4>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                          Supported formats: MP3, WAV, M4A, WEBM, OGG (Max 25MB)
+                        </p>
+                      </div>
+
+                      {meetingAudioFile && (
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-3">
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-base">🎧</span>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                {meetingAudioFile.name}
+                              </span>
+                              <span className="text-slate-400 shrink-0">
+                                ({(meetingAudioFile.size / (1024 * 1024)).toFixed(2)} MB)
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMeetingAudioFile(null);
+                                if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+                                setAudioPreviewUrl(null);
+                              }}
+                              className="text-xs text-rose-600 dark:text-rose-400 hover:underline font-semibold"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          {audioPreviewUrl && (
+                            <audio controls className="w-full h-10 rounded-lg" src={audioPreviewUrl} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tab 2: Live Recording */}
+                  {meetingInputTab === "record" && (
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 p-6 text-center space-y-4">
+                      {!isRecording && !meetingAudioFile && (
+                        <div className="space-y-3">
+                          <button
+                            type="button"
+                            onClick={startRecording}
+                            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-600 text-white text-2xl shadow-lg shadow-rose-500/30 hover:scale-105 active:scale-95 transition cursor-pointer"
+                          >
+                            🎙️
+                          </button>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                              Start Live Recording
+                            </h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              Record your meeting discussion directly through your device microphone.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {isRecording && (
+                        <div className="space-y-4 py-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="flex h-3 w-3 rounded-full bg-rose-600 animate-ping" />
+                            <span className="text-xs font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                              Recording Meeting Audio...
+                            </span>
+                          </div>
+                          <div className="text-3xl font-mono font-black text-slate-900 dark:text-white">
+                            {String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:
+                            {String(recordingSeconds % 60).padStart(2, "0")}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={stopRecording}
+                            className="mx-auto flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-rose-500 active:scale-95 transition cursor-pointer"
+                          >
+                            ⏹️ Stop &amp; Save Recording
+                          </button>
+                        </div>
+                      )}
+
+                      {!isRecording && meetingAudioFile && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <span>✓</span>
+                            <span>Recording Ready ({recordingSeconds}s)</span>
+                          </div>
+                          {audioPreviewUrl && (
+                            <audio controls className="w-full max-w-md mx-auto h-10 rounded-lg" src={audioPreviewUrl} />
+                          )}
+                          <div className="pt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMeetingAudioFile(null);
+                                if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+                                setAudioPreviewUrl(null);
+                              }}
+                              className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
+                            >
+                              🔄 Record Again
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Multilingual Support Banner */}
+                  <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/60 bg-gradient-to-r from-indigo-50/70 to-violet-50/70 dark:from-indigo-950/40 dark:to-violet-950/40 p-4 flex items-start gap-3">
+                    <span className="text-xl shrink-0">🌐</span>
+                    <div className="text-xs space-y-0.5">
+                      <strong className="text-indigo-950 dark:text-indigo-200 block">
+                        Multilingual AI Engine
+                      </strong>
+                      <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Speak in any language — <strong>English, Hindi, Hinglish, Spanish, French, Gujarati, German</strong>, etc.
+                        ClubOps AI automatically transcribes speech, extracts key decisions, and maps tasks to event members in clean English.
+                      </p>
+                    </div>
+                  </div>
+
+                  {meetingError && (
+                    <div className="rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/50 p-3 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                      ⚠️ {meetingError}
+                    </div>
+                  )}
+
+                  {/* Modal Action Buttons */}
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={closeMeetingModal}
+                      className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!meetingAudioFile || isRecording || meetingAnalyzing}
+                      onClick={handleAnalyzeMeetingAudio}
+                      className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:from-indigo-500 hover:to-violet-500 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] flex items-center gap-2"
+                    >
+                      <span>⚡</span> Analyze Meeting with ClubOps AI
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: PROCESSING / AI ANALYSIS */}
+              {meetingStep === "processing" && (
+                <div className="py-12 text-center space-y-6">
+                  <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
+                    <div className="absolute inset-0 rounded-full border-4 border-indigo-600/20 border-t-indigo-600 animate-spin" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white text-xl animate-pulse">
+                      🎙️
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 max-w-md mx-auto">
+                    <h4 className="text-base font-extrabold text-slate-900 dark:text-white">
+                      Processing Meeting Audio
+                    </h4>
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold animate-pulse">
+                      {meetingProcessingStage}
+                    </p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                      Whisper speech model is converting speech and generating structured tasks...
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center items-center gap-2 pt-2">
+                    <span className="h-2 w-2 rounded-full bg-indigo-600 animate-bounce" />
+                    <span className="h-2 w-2 rounded-full bg-indigo-600 animate-bounce [animation-delay:0.2s]" />
+                    <span className="h-2 w-2 rounded-full bg-indigo-600 animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: REVIEW & MANUAL EDITING (EXECUTIVE BRIEF & TASKS) */}
+              {meetingStep === "review" && (
+                <div className="space-y-6">
+                  {/* Status & Re-Analyze Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-indigo-50/50 dark:bg-indigo-950/30 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-900/60">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        AI Analysis Complete
+                      </span>
+                      <span className="text-slate-400 dark:text-slate-500">•</span>
+                      <span className="text-indigo-700 dark:text-indigo-300 font-medium">
+                        {extractedTasks.length} task{extractedTasks.length !== 1 ? "s" : ""} extracted
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setMeetingStep("upload")}
+                      className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer"
+                    >
+                      ← Analyze Different Audio
+                    </button>
+                  </div>
+
+                  {/* SECTION A: EXECUTIVE BRIEF & EVENT ANNOUNCEMENT */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 p-5 space-y-4">
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">📋</span>
+                        <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">
+                          Executive Meeting Brief
+                        </h4>
+                      </div>
+                      <span className="text-[11px] text-slate-400">
+                        Editable before broadcasting
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Meeting Title
+                      </label>
+                      <input
+                        type="text"
+                        value={summaryTitle}
+                        onChange={(e) => setSummaryTitle(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Brief Summary
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={summaryBrief}
+                        onChange={(e) => setSummaryBrief(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition leading-relaxed"
+                      />
+                    </div>
+
+                    {/* Key Decisions Bullets */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Key Decisions Made ({summaryDecisions.length})
+                      </label>
+                      <div className="space-y-2">
+                        {summaryDecisions.map((decision, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="text-xs text-indigo-600 dark:text-indigo-400 shrink-0 font-bold">•</span>
+                            <input
+                              type="text"
+                              value={decision}
+                              onChange={(e) => {
+                                const updated = [...summaryDecisions];
+                                updated[idx] = e.target.value;
+                                setSummaryDecisions(updated);
+                              }}
+                              className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDecision(idx)}
+                              className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 text-xs px-1 cursor-pointer"
+                              title="Delete decision"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="text"
+                          placeholder="+ Add another decision point..."
+                          value={newDecisionInput}
+                          onChange={(e) => setNewDecisionInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddDecision();
+                            }
+                          }}
+                          className="flex-1 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-transparent px-2.5 py-1 text-xs text-slate-700 dark:text-slate-300 focus:border-indigo-500 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddDecision}
+                          disabled={!newDecisionInput.trim()}
+                          className="rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition disabled:opacity-40 cursor-pointer"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Publish Announcement Card Action */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-900/50 p-3.5 rounded-xl">
+                      <div className="text-xs">
+                        <strong className="text-slate-800 dark:text-slate-200 block">
+                          Broadcast to Event Announcements
+                        </strong>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Publish this summary directly to the event announcements feed for all joined members.
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={publishingAnnouncement || announcementPublished || !summaryBrief.trim()}
+                        onClick={handlePublishMeetingAnnouncement}
+                        className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:from-indigo-500 hover:to-violet-500 transition disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 min-h-[40px] cursor-pointer"
+                      >
+                        {publishingAnnouncement ? (
+                          "Publishing..."
+                        ) : announcementPublished ? (
+                          "✓ Published to Announcements"
+                        ) : (
+                          "📢 Publish as Event Announcement"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* SECTION B: EXTRACTED TASKS & VOLUNTEER ASSIGNMENTS */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 p-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🎯</span>
+                          <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">
+                            Extracted Action Items &amp; Volunteer Assignments ({extractedTasks.length})
+                          </h4>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          Review, edit details, or reassign below. &ldquo;Whom to inform&rdquo; is compulsory for each task.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleAddNewTask}
+                        className="self-start sm:self-auto rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/50 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer"
+                      >
+                        + Add Another Task
+                      </button>
+                    </div>
+
+                    {extractedTasks.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-400">
+                        No tasks currently in list. Click &ldquo;+ Add Another Task&rdquo; to create one.
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {extractedTasks.map((task, idx) => (
+                          <div
+                            key={task.tempId}
+                            className="rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/40 dark:bg-slate-900/60 p-4 space-y-3 shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/70 text-indigo-700 dark:text-indigo-300 font-extrabold text-xs">
+                                  #{idx + 1}
+                                </span>
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                  Action Item
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={task.priority}
+                                  onChange={(e) =>
+                                    handleUpdateExtractedTask(
+                                      idx,
+                                      "priority",
+                                      e.target.value as "low" | "medium" | "high"
+                                    )
+                                  }
+                                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 focus:outline-none"
+                                >
+                                  <option value="low">🟢 Low Priority</option>
+                                  <option value="medium">🟡 Medium Priority</option>
+                                  <option value="high">🔴 High Priority</option>
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteExtractedTask(idx)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+                                  title="Delete task"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                Task Title *
+                              </label>
+                              <input
+                                type="text"
+                                value={task.name}
+                                onChange={(e) =>
+                                  handleUpdateExtractedTask(idx, "name", e.target.value)
+                                }
+                                placeholder="e.g. Design Hackathon Poster & Social Banners"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                Description &amp; Deliverables
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={task.description}
+                                onChange={(e) =>
+                                  handleUpdateExtractedTask(idx, "description", e.target.value)
+                                }
+                                placeholder="Details, requirements, guidelines discussed..."
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                  Assign &amp; Inform Volunteer *
+                                </label>
+                                <select
+                                  value={task.assigned_to}
+                                  onChange={(e) =>
+                                    handleUpdateExtractedTask(idx, "assigned_to", e.target.value)
+                                  }
+                                  className={`w-full rounded-xl border px-3 py-2 text-xs font-semibold focus:outline-none transition ${
+                                    !task.assigned_to
+                                      ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200"
+                                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                                  }`}
+                                >
+                                  <option value="">-- Select volunteer to assign * --</option>
+                                  {availableAssigneeOptions.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                      {v.name} {v.role ? `(${v.role})` : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                  Target Deadline
+                                </label>
+                                <input
+                                  type="datetime-local"
+                                  value={task.deadline ? task.deadline.slice(0, 16) : ""}
+                                  onChange={(e) =>
+                                    handleUpdateExtractedTask(idx, "deadline", e.target.value)
+                                  }
+                                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {batchTasksError && (
+                      <div className="rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/50 p-3 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                        ⚠️ {batchTasksError}
+                      </div>
+                    )}
+
+                    {batchTasksSuccess && (
+                      <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/50 p-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        {batchTasksSuccess}
+                      </div>
+                    )}
+
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                      <span className="text-xs text-slate-400">
+                        Volunteers receive instant real-time notifications on assignment.
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={savingBatchTasks || extractedTasks.length === 0}
+                        onClick={handleSaveBatchTasks}
+                        className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow-xs active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] flex items-center gap-2 cursor-pointer"
+                      >
+                        <span>✓</span>
+                        <span>
+                          {savingBatchTasks
+                            ? "Assigning Tasks..."
+                            : `Assign & Save All Tasks (${extractedTasks.length})`}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
